@@ -10,7 +10,7 @@ import SwiftData
 import ActivityKit
 
 @main
-struct EVRAApp: App {
+struct VelosApp: App {
     // 1. Monitoriza a fase da cena (Background, Active, Inactive)
     @Environment(\.scenePhase) private var scenePhase
     

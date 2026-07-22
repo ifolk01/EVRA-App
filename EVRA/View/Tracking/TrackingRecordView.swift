@@ -243,7 +243,7 @@ struct TrackingRecordView: View {
         
         let locationStatus = CLLocationManager().authorizationStatus
         if locationStatus == .denied || locationStatus == .restricted {
-            alertMessage = "A EVRA precisa do acesso à sua localização para registar os quilómetros. Por favor, ative nas Definições do iOS."
+            alertMessage = "A Velos precisa do acesso à sua localização para registar os quilómetros. Por favor, ative nas Definições do iOS."
             showErrorAlert = true
             return false
         }

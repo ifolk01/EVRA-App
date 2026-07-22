@@ -52,7 +52,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		9BF02C872FFD57700090A62D /* EVRA.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = EVRA.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		9BF02C872FFD57700090A62D /* Velos.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Velos.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		9BF02C942FFD57720090A62D /* EVRATests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = EVRATests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		9BF02C9E2FFD57720090A62D /* EVRAUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = EVRAUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		9BF02CD92FFDA1BC0090A62D /* LevWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = LevWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -68,13 +68,13 @@
 			);
 			target = 9BF02CD82FFDA1BC0090A62D /* LevWidgetExtension */;
 		};
-		9BF02CF92FFDAE5D0090A62D /* Exceptions for "EVRA" folder in "EVRA" target */ = {
+		9BF02CF92FFDAE5D0090A62D /* Exceptions for "EVRA" folder in "Velos" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
 				LiveActivity/TrackingWidget.swift,
 			);
-			target = 9BF02C862FFD57700090A62D /* EVRA */;
+			target = 9BF02C862FFD57700090A62D /* Velos */;
 		};
 		9BF02D102FFEF8520090A62D /* Exceptions for "EVRA" folder in "LevWidgetExtension" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
@@ -90,7 +90,7 @@
 		9BF02C892FFD57700090A62D /* EVRA */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
-				9BF02CF92FFDAE5D0090A62D /* Exceptions for "EVRA" folder in "EVRA" target */,
+				9BF02CF92FFDAE5D0090A62D /* Exceptions for "EVRA" folder in "Velos" target */,
 				9BF02D102FFEF8520090A62D /* Exceptions for "EVRA" folder in "LevWidgetExtension" target */,
 			);
 			path = EVRA;
@@ -166,7 +166,7 @@
 		9BF02C882FFD57700090A62D /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				9BF02C872FFD57700090A62D /* EVRA.app */,
+				9BF02C872FFD57700090A62D /* Velos.app */,
 				9BF02C942FFD57720090A62D /* EVRATests.xctest */,
 				9BF02C9E2FFD57720090A62D /* EVRAUITests.xctest */,
 				9BF02CD92FFDA1BC0090A62D /* LevWidgetExtension.appex */,
@@ -186,9 +186,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		9BF02C862FFD57700090A62D /* EVRA */ = {
+		9BF02C862FFD57700090A62D /* Velos */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 9BF02CA82FFD57720090A62D /* Build configuration list for PBXNativeTarget "EVRA" */;
+			buildConfigurationList = 9BF02CA82FFD57720090A62D /* Build configuration list for PBXNativeTarget "Velos" */;
 			buildPhases = (
 				9BF02C832FFD57700090A62D /* Sources */,
 				9BF02C842FFD57700090A62D /* Frameworks */,
@@ -203,12 +203,12 @@
 			fileSystemSynchronizedGroups = (
 				9BF02C892FFD57700090A62D /* EVRA */,
 			);
-			name = EVRA;
+			name = Velos;
 			packageProductDependencies = (
 				9B7733AC30113355003AB477 /* PostHog */,
 			);
 			productName = EVRA;
-			productReference = 9BF02C872FFD57700090A62D /* EVRA.app */;
+			productReference = 9BF02C872FFD57700090A62D /* Velos.app */;
 			productType = "com.apple.product-type.application";
 		};
 		9BF02C932FFD57720090A62D /* EVRATests */ = {
@@ -305,7 +305,7 @@
 					};
 				};
 			};
-			buildConfigurationList = 9BF02C822FFD57700090A62D /* Build configuration list for PBXProject "EVRA" */;
+			buildConfigurationList = 9BF02C822FFD57700090A62D /* Build configuration list for PBXProject "Velos" */;
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -322,7 +322,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				9BF02C862FFD57700090A62D /* EVRA */,
+				9BF02C862FFD57700090A62D /* Velos */,
 				9BF02C932FFD57720090A62D /* EVRATests */,
 				9BF02C9D2FFD57720090A62D /* EVRAUITests */,
 				9BF02CD82FFDA1BC0090A62D /* LevWidgetExtension */,
@@ -395,12 +395,12 @@
 /* Begin PBXTargetDependency section */
 		9BF02C962FFD57720090A62D /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = 9BF02C862FFD57700090A62D /* EVRA */;
+			target = 9BF02C862FFD57700090A62D /* Velos */;
 			targetProxy = 9BF02C952FFD57720090A62D /* PBXContainerItemProxy */;
 		};
 		9BF02CA02FFD57720090A62D /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = 9BF02C862FFD57700090A62D /* EVRA */;
+			target = 9BF02C862FFD57700090A62D /* Velos */;
 			targetProxy = 9BF02C9F2FFD57720090A62D /* PBXContainerItemProxy */;
 		};
 		9BF02CEE2FFDA1BE0090A62D /* PBXTargetDependency */ = {
@@ -777,7 +777,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		9BF02C822FFD57700090A62D /* Build configuration list for PBXProject "EVRA" */ = {
+		9BF02C822FFD57700090A62D /* Build configuration list for PBXProject "Velos" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				9BF02CA62FFD57720090A62D /* Debug */,
@@ -786,7 +786,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		9BF02CA82FFD57720090A62D /* Build configuration list for PBXNativeTarget "EVRA" */ = {
+		9BF02CA82FFD57720090A62D /* Build configuration list for PBXNativeTarget "Velos" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				9BF02CA92FFD57720090A62D /* Debug */,

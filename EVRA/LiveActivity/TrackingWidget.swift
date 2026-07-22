@@ -180,7 +180,7 @@ struct TrackingWidget: Widget {
 }
 
 @main
-struct EVRAWidgets: WidgetBundle {
+struct VelosWidgets: WidgetBundle {
     var body: some Widget {
         TrackingWidget()
     }

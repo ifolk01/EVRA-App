@@ -60,7 +60,7 @@ struct LoginView: View {
                     }
                     Spacer()
                     
-                    Image("logoEvra")
+                    Image("logoVelos")
                         .resizable()
                         .scaledToFit()
                     

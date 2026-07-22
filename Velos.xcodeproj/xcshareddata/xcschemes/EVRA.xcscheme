@@ -17,9 +17,9 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "9BF02C862FFD57700090A62D"
-               BuildableName = "EVRA.app"
-               BlueprintName = "EVRA"
-               ReferencedContainer = "container:EVRA.xcodeproj">
+               BuildableName = "Velos.app"
+               BlueprintName = "Velos"
+               ReferencedContainer = "container:Velos.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
          <BuildActionEntry
@@ -33,7 +33,7 @@
                BlueprintIdentifier = "9BF02CD82FFDA1BC0090A62D"
                BuildableName = "LevWidgetExtension.appex"
                BlueprintName = "LevWidgetExtension"
-               ReferencedContainer = "container:EVRA.xcodeproj">
+               ReferencedContainer = "container:Velos.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>
@@ -61,9 +61,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "9BF02C862FFD57700090A62D"
-            BuildableName = "EVRA.app"
-            BlueprintName = "EVRA"
-            ReferencedContainer = "container:EVRA.xcodeproj">
+            BuildableName = "Velos.app"
+            BlueprintName = "Velos"
+            ReferencedContainer = "container:Velos.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </LaunchAction>
@@ -78,9 +78,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "9BF02C862FFD57700090A62D"
-            BuildableName = "EVRA.app"
-            BlueprintName = "EVRA"
-            ReferencedContainer = "container:EVRA.xcodeproj">
+            BuildableName = "Velos.app"
+            BlueprintName = "Velos"
+            ReferencedContainer = "container:Velos.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </ProfileAction>
