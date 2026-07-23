@@ -268,6 +268,7 @@ struct HomeDashboardView: View {
                     
                     let distanceKm = distanceMeters / 1000.0
                     let co2Grams = distanceKm * factor
+                    let currentAppleID = UserDefaults.standard.string(forKey: "apple_user_id") ?? "usuario_desconhecido"
                     
                     totalNewDistance += distanceKm
                     totalNewCO2 += co2Grams
@@ -277,7 +278,7 @@ struct HomeDashboardView: View {
                     }
                     
                     // Grava o histórico individual (opcional para exibir listas depois)
-                    let newRide = LocalRide(distance: distanceKm, duration: workout.duration, co2Avoided: co2Grams, date: workout.endDate)
+                    let newRide = LocalRide(distance: distanceKm, duration: workout.duration, co2Avoided: co2Grams, date: workout.endDate, userAppleID: currentAppleID)
                     modelContext.insert(newRide)
                 }
                 

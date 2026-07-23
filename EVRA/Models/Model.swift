@@ -26,6 +26,8 @@ class LocalRide {
     // 1. Removido o @Attribute(.unique) para cumprir as regras do CloudKit
     var id: UUID = UUID()
     
+    var userAppleID: String = ""
+    
     // 2. Todos os campos agora possuem valores padrão (obrigatório para CloudKit)
     var distance: Double = 0.0 // km
     var duration: TimeInterval = 0.0 // segundos
@@ -35,12 +37,13 @@ class LocalRide {
     // O grande segredo para o modo offline!
     var isSyncedToCloud: Bool = false
     
-    init(id: UUID = UUID(), distance: Double, duration: TimeInterval, co2Avoided: Double, date: Date = Date(), isSyncedToCloud: Bool = false) {
+    init(id: UUID = UUID(), distance: Double, duration: TimeInterval, co2Avoided: Double, date: Date = Date(), isSyncedToCloud: Bool = false,userAppleID: String) {
         self.id = id
         self.distance = distance
         self.duration = duration
         self.co2Avoided = co2Avoided
         self.date = date
         self.isSyncedToCloud = isSyncedToCloud
+        self.userAppleID = userAppleID
     }
 }

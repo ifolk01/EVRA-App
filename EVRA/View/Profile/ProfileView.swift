@@ -9,6 +9,8 @@ import SwiftData
 
 struct ProfileView: View {
    
+    @AppStorage("SubstitutingVehicle") var substitutedVehicle: SubstitutedVehicle = .car
+
     @Bindable var homeVM: HomeViewModel
     @Environment(AppRouter.self) private var router
     @Environment(\.modelContext) private var modelContext
@@ -79,6 +81,37 @@ struct ProfileView: View {
                                             
                     Spacer(minLength: 40)
                     
+                    
+                    Button(action: {
+                        if let user = homeVM.currentUser {
+                            let userId = user.id
+                            
+                            // 1. Apaga do CloudKit em background (Exigência Apple)
+                            Task {
+                                let ckService = CloudKitService()
+                                try? await ckService.deleteUser(userId: userId)
+                            }
+                            
+                            // 2. Apaga localmente do SwiftData
+                            modelContext.delete(user)
+                            try? modelContext.save()
+                        }
+                        
+                        // 3. Limpa sessão e volta ao Login
+                        UserDefaults.standard.removeObject(forKey: "apple_user_id")
+                        UserDefaults.standard.set(false, forKey: "isLoggedIn")
+                    }) {
+                        Text("Terminar sessão")
+                            .foregroundColor(.red)
+                            .font(.subheadline)
+                            .fontWeight(.bold)
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                            .background(Color.red.opacity(0.1))
+                            .cornerRadius(12)
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.top, 20)
                 }
             }
             .background(AppColors.levGreenBg.edgesIgnoringSafeArea(.all))

@@ -34,12 +34,17 @@ class HomeViewModel {
             errorMessage = nil
             
             do {
-                // 1. Busca o usuário com o try await. Isso valida o catch lá embaixo!
+                // 1. Busca o usuário primeiro
                 currentUser = try await cloudKitService.fetchUser(appleUserIdentifier: appleUserId)
                 
-                // 2. Se encontrou o usuário, busca as corridas dele
+                // 2. Se encontrou o usuário, tentamos buscar as corridas num bloco protegido!
                 if let user = currentUser {
-                    recentRides = try await cloudKitService.fetchRecentRides(for: user.id)
+                    do {
+                        recentRides = try await cloudKitService.fetchRecentRides(for: user.id)
+                    } catch {
+                        print("⚠️ Nenhuma corrida encontrada ou tabela não existe na nuvem ainda.")
+                        // Não interrompemos o fluxo, o utilizador continua carregado!
+                    }
                 }
                 
             } catch {

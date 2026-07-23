@@ -104,49 +104,52 @@ class GroupsViewModel: NSObject, ObservableObject, CLLocationManagerDelegate {
             // 1. QUERY PARA O RANKING (Tabela PublicLeaderboard)
             let rankPredicate = NSPredicate(format: "groupName == %@", group)
             let rankQuery = CKQuery(recordType: "PublicLeaderboard", predicate: rankPredicate)
-            rankQuery.sortDescriptors = [NSSortDescriptor(key: "totalDistance", ascending: false)]
             
+            rankQuery.sortDescriptors = [
+                    NSSortDescriptor(key: "totalCarbonPoints", ascending: false), // 1º Critério: Pontos
+                    NSSortDescriptor(key: "totalDistance", ascending: false)      // 2º Critério: Distância (Desempate)
+                ]
+        
             // 2. QUERY PARA O FEED AO VIVO (Tabela PublicFeedActivity - últimas 20 pedaladas)
             let feedPredicate = NSPredicate(format: "groupName == %@", group)
             let feedQuery = CKQuery(recordType: "PublicFeedActivity", predicate: feedPredicate)
             feedQuery.sortDescriptors = [NSSortDescriptor(key: "date", ascending: false)]
             
-            do {
-                // Executa as duas buscas em paralelo na nuvem
-                async let rankResult = publicDB.records(matching: rankQuery)
-                async let feedResult = publicDB.records(matching: feedQuery)
-                
-                let (rankMatches, _) = try await rankResult
-                let (feedMatches, _) = try await feedResult
-                
-                var fetchedRankings: [RankingUser] = []
-                var fetchedFeed: [FeedActivity] = []
-                
-                // Processa o Ranking (Sem duplicados, 1 por utilizador)
-                for match in rankMatches {
-                    if case .success(let record) = match.1 {
-                        let name = record["userName"] as? String ?? "Ciclista LEV"
-                        let distance = record["totalDistance"] as? Double ?? 0.0
-                        let co2 = record["totalCO2"] as? Double ?? 0.0
-                        let points = Int(distance * 10)
-                        
-                        fetchedRankings.append(RankingUser(name: name, points: points, co2: co2))
+        do {
+                    // Executa as duas buscas em paralelo na nuvem
+                    let (rankMatches, _) = try await publicDB.records(matching: rankQuery)
+                    let (feedMatches, _) = try await publicDB.records(matching: feedQuery)
+                    
+                    var fetchedRankings: [RankingUser] = []
+                    var fetchedFeed: [FeedActivity] = []
+                    
+                    // Processa o Ranking (Sem duplicados, 1 por utilizador)
+                    for match in rankMatches {
+                        if case .success(let record) = match.1 {
+                            let name = record["userName"] as? String ?? "Ciclista Desconhecido"
+                            let distance = record["totalDistance"] as? Double ?? 0.0
+                            let co2 = record["totalCO2"] as? Double ?? 0.0
+                            
+                            // 🔥 CORREÇÃO 2: Agora puxa os Carbon Points reais salvos na nuvem!
+                            let points = record["totalCarbonPoints"] as? Int ?? 0
+                            
+                            fetchedRankings.append(RankingUser(name: name, points: points, co2: co2))
+                        }
                     }
-                }
                 
                 // Processa o Feed ao Vivo (Histórico cronológico real de pedaladas)
                 for match in feedMatches {
                     if case .success(let record) = match.1 {
-                        let name = record["userName"] as? String ?? "Ciclista LEV"
+                        let name = record["userName"] as? String ?? "Ciclista"
                         let distance = record["distance"] as? Double ?? 0.0
                         let co2 = record["co2Avoided"] as? Double ?? 0.0
                         let date = record["date"] as? Date ?? Date()
                         
-                        let co2Formatted = co2 > 1000 ? String(format: "%.1f kg", co2 / 1000.0) : "\(Int(co2)) g"
+                        let co2Formatted = co2 > 1000 ? String(format: "%.1f kg", co2 / 1000.0) : String(format: "%.0f g", co2)
                         
                         fetchedFeed.append(FeedActivity(
                             name: name,
-                            action: " - evitou \(co2Formatted) de CO2!",
+                            action: " - evitou \(co2Formatted)",
                             distance: distance,
                             timestamp: date
                         ))

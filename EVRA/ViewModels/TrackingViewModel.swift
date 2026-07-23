@@ -155,7 +155,7 @@ class TrackingViewModel {
                 emissionFactorReplaced = 70.0  // Autocarro (pegada dividida pelos passageiros)
             case .subway:
                 emissionFactorReplaced = 30.0  // Metro (elétrico, mas com pegada da rede elétrica local)
-            case .walking:
+            default:
                 // A pé emite zero. Se o utilizador andava a pé e passou a andar de e-bike (15g),
                 // ele tecnicamente polui mais. Mantemos em 0 para não gerar saldo negativo.
                 emissionFactorReplaced = 0.0
@@ -205,7 +205,8 @@ class TrackingViewModel {
                 let newRide = LocalRide(
                     distance: distanceInKm,
                     duration: durationInSeconds,
-                    co2Avoided: co2AvoidedGrams
+                    co2Avoided: co2AvoidedGrams,
+                    userAppleID: currentUser?.appleUserIdentifier ?? "usuario_desconhecido"
                 )
                 context.insert(newRide)
                 
@@ -220,7 +221,7 @@ class TrackingViewModel {
                     try context.save() // Salva a corrida E atualiza o utilizador de uma vez!
                     print("Sucesso: Viagem guardada e totais atualizados.")
                     
-                    syncWithPublicLeaderboard(distance: distanceInKm, co2: co2AvoidedGrams)
+                    syncWithPublicLeaderboard(distance: distanceInKm, co2: co2AvoidedGrams, points: self.carbonPoints)
                 } catch {
                     print("Erro crítico ao guardar localmente: \(error)")
                     return
@@ -347,7 +348,7 @@ class TrackingViewModel {
     
  
     // MARK: - CLOUDKIT PUBLIC SYNC (Leaderboard & Feed Separados)
-        private func syncWithPublicLeaderboard(distance: Double, co2: Double) {
+        private func syncWithPublicLeaderboard(distance: Double, co2: Double, points: Int) {
             Task {
                 let publicDB = CKContainer.default().publicCloudDatabase
                 
@@ -376,7 +377,7 @@ class TrackingViewModel {
                 
                 let userVehicle = UserDefaults.standard.string(forKey: "user_substituted_vehicle") ?? "Ciclista"
                 let groupName = "\(userVehicle) - \(city)"
-                let userName = UserDefaults.standard.string(forKey: "user_name") ?? "Ciclista LEV"
+                let userName = activeUser?.name ?? "Ciclista Desconhecido"
                 let userAppleID = UserDefaults.standard.string(forKey: "apple_user_id") ?? "usuario_anonimo"
                 
                 // ==========================================
@@ -391,9 +392,11 @@ class TrackingViewModel {
                     if let firstMatch = matchResults.first, case .success(let existingRecord) = firstMatch.1 {
                         let currentDistance = existingRecord["totalDistance"] as? Double ?? 0.0
                         let currentCO2 = existingRecord["totalCO2"] as? Double ?? 0.0
+                        let currentPoints = existingRecord["totalCarbonPoints"] as? Int ?? 0
                         
                         existingRecord["totalDistance"] = currentDistance + distance
                         existingRecord["totalCO2"] = currentCO2 + co2
+                        existingRecord["totalCarbonPoints"] = currentPoints + points
                         existingRecord["userName"] = userName
                         
                         try await publicDB.save(existingRecord)
@@ -405,6 +408,7 @@ class TrackingViewModel {
                         newRecord["groupName"] = groupName
                         newRecord["totalDistance"] = distance
                         newRecord["totalCO2"] = co2
+                        newRecord["totalCarbonPoints"] = points
                         
                         try await publicDB.save(newRecord)
                         print("☁️ 🏆 CloudKit: Novo perfil criado no Ranking!")
@@ -417,6 +421,7 @@ class TrackingViewModel {
                     newRecord["groupName"] = groupName
                     newRecord["totalDistance"] = distance
                     newRecord["totalCO2"] = co2
+                    newRecord["totalCarbonPoints"] = points
                     try? await publicDB.save(newRecord)
                 }
                 

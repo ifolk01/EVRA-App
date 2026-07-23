@@ -73,6 +73,15 @@ class CloudKitService {
             throw CloudKitError.failedToSave
         }
     }
+    func deleteUser(userId: UUID) async throws {
+            let recordID = CKRecord.ID(recordName: userId.uuidString)
+            do {
+                try await privateDB.deleteRecord(withID: recordID)
+                print("☁️ Utilizador apagado do CloudKit com sucesso.")
+            } catch {
+                throw CloudKitError.failedToSave
+            }
+        }
     
     // MARK: - Operações de Corridas (Private DB)
     

@@ -38,6 +38,7 @@ final class User {
         var name: String = ""
         var email: String = ""
         
+    
         // Dados recolhidos no Onboarding
         var bikeSerialNumber: String? = nil
         var substitutedVehicleRawValue: String = ""

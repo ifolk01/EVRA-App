@@ -398,6 +398,8 @@ struct ProfilePreferencesSection: View {
                     }
                 }
             }
+            
+         
         }
         .padding(24)
         .background(Color(UIColor.systemBackground))

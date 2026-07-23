@@ -8,6 +8,7 @@
 import SwiftUI
 import Observation
 
+
 /// Define em qual "fase" macro o aplicativo está no momento.
 enum AppState {
     case splash // Tela de carregamento inicial (verificando sessão no CloudKit)
@@ -39,7 +40,7 @@ class AppRouter {
     
     // O caminho de navegação atual do Onboarding.
     // Uma array vazia significa que estamos na raiz (primeira tela).
-    var onboardingPath = NavigationPath()
+     var onboardingPath = NavigationPath()
     
     // MARK: - Ações de Estado Macro
     

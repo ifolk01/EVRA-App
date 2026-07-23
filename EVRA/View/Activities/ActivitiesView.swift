@@ -7,14 +7,18 @@ import SwiftUI
 import SwiftData
 
 struct ActivitiesView: View {
-    // 🔥 Puxa o histórico real e atualizado diretamente do SwiftData
     @Query(sort: \LocalRide.date, order: .reverse) private var allRides: [LocalRide]
+    @Environment(HomeViewModel.self) private var homeVM
+        
+        // Variável que vai receber a lista filtrada
+        @State private var myRides: [LocalRide] = []
+        @Environment(\.modelContext) private var modelContext
     
     var body: some View {
         NavigationStack {
             ScrollView(showsIndicators: false) {
                 LazyVStack(spacing: 16) {
-                    if allRides.isEmpty {
+                    if myRides.isEmpty {
                         VStack(spacing: 12) {
                             Image(systemName: "bicycle")
                                 .font(.system(size: 50))
@@ -26,7 +30,7 @@ struct ActivitiesView: View {
                         .padding(.top, 50)
                     } else {
                         // Gera um cartão para cada corrida na base de dados
-                        ForEach(allRides) { ride in
+                        ForEach(myRides) { ride in
                             ActivityCardView(ride: ride)
                         }
                     }
@@ -35,8 +39,29 @@ struct ActivitiesView: View {
             }
             .background(AppColors.levGreenBg.edgesIgnoringSafeArea(.all)) // Mantém o fundo da App
             .navigationTitle("Atividades")
+            .onAppear {
+                            // 3. Ao abrir a aba, aciona a busca filtrada
+                            fetchMyRides()
+                        }
         }
     }
+    
+    private func fetchMyRides() {
+            // Pega o ID do utilizador que fez o login
+            guard let myID = homeVM.currentUser?.appleUserIdentifier else { return }
+            
+            // Cria a regra: Só buscar as pedaladas carimbadas com o MEU appleUserIdentifier
+            let fetchDescriptor = FetchDescriptor<LocalRide>(
+                predicate: #Predicate { $0.userAppleID == myID },
+                sortBy: [SortDescriptor(\.date, order: .reverse)]
+            )
+            
+            do {
+                myRides = try modelContext.fetch(fetchDescriptor)
+            } catch {
+                print("❌ Erro ao buscar atividades privadas: \(error)")
+            }
+        }
 }
 
 // MARK: - Componente do Cartão (Design Live Activity)
@@ -67,10 +92,9 @@ struct ActivityCardView: View {
                 
                 // Bloco do CO2 (Destaque principal)
                 HStack(alignment: .firstTextBaseline, spacing: 4) {
-                    Text("\(Int(ride.co2Avoided))")
-                        .font(.system(size: 65, weight: .bold, design: .rounded))
+                    Text(String(format: "%.0f", ride.co2Avoided))
+                        .font(.system(size: 50, weight: .bold, design: .rounded))
                         .foregroundColor(.black)
-                        // Ajusta automaticamente o tamanho se o número for gigante
                         .minimumScaleFactor(0.5)
                         .lineLimit(1)
                     

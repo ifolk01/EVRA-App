@@ -7,12 +7,15 @@
 
 import SwiftUI
 import CoreLocation
+import SwiftData
 
 struct MainTabView: View {
     // Instanciamos o ViewModel global que partilha os dados do utilizador
-      var homeVM = HomeViewModel()
-      var trackingVM: TrackingViewModel
+    var homeVM: HomeViewModel
+    var trackingVM: TrackingViewModel
     private let locationManager = CLLocationManager()
+    @Query private var savedUsers: [User]
+    
     var body: some View {
         TabView {
             // Aba 1: Dashboard (Início)
@@ -49,19 +52,19 @@ struct MainTabView: View {
         }
         .tint(AppColors.levBlue) // A cor do ícone quando a aba está selecionada
         .onAppear {
-                    // 🔥 Pede a autorização de localização assim que o app abre e entra na TabBar
-                    locationManager.requestWhenInUseAuthorization()
+                    // 🔥 Injeta o utilizador instantaneamente assim que a TabBar carrega
+                    if let user = savedUsers.first {
+                        homeVM.currentUser = user
+                    }
                     
-                    // Se precisar que o app também rastreie com ele em segundo plano (ecrã bloqueado a pedalar):
-                     locationManager.requestAlwaysAuthorization()
+                    locationManager.requestWhenInUseAuthorization()
+                    locationManager.requestAlwaysAuthorization()
                 }
-    }
-}
+                .onChange(of: savedUsers) { _, users in
+                    if let user = users.first {
+                        homeVM.currentUser = user
+                    }
+                }
+            }
+        }
 
-
-
-
-
-#Preview {
-    MainTabView(trackingVM: TrackingViewModel())
-}
