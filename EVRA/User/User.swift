@@ -34,23 +34,24 @@ enum SubstitutedVehicle: String, Codable, CaseIterable {
 final class User {
     var id: UUID = UUID()
     // 2. Valores padrão em todas as variáveis não-opcionais
-        var appleUserIdentifier: String = ""
-        var name: String = ""
-        var email: String = ""
-        
+    var appleUserIdentifier: String = ""
+    var name: String = ""
+    var email: String = ""
     
-        // Dados recolhidos no Onboarding
-        var bikeSerialNumber: String? = nil
-        var substitutedVehicleRawValue: String = ""
-        var frequency: String = ""
-        var routes: [String] = []
-       
-        
-        // Métricas de Gamificação
-        var totalCarbonPoints: Int = 0
-        var totalCO2Avoided: Double = 0.0
-        var totalDistance: Double = 0.0
-        var createdAt: Date = Date()
+    
+    // Dados recolhidos no Onboarding
+    var bikeSerialNumber: String? = nil
+    var substitutedVehicleRawValue: String = ""
+    var frequency: String = ""
+    var routes: [String] = []
+    
+    
+    // Métricas de Gamificação
+    var totalCarbonPoints: Int = 0
+    var totalCO2Avoided: Double = 0.0
+    var spendableCarbonPoints: Int = 0
+    var totalDistance: Double = 0.0
+    var createdAt: Date = Date()
     
     init(appleUserIdentifier: String, name: String, email: String, bikeSerialNumber: String?, substitutedVehicleRawValue: String, frequency: String, routes: [String]) {
         self.id = UUID()
@@ -65,24 +66,26 @@ final class User {
         self.totalCarbonPoints = 0
         self.totalCO2Avoided = 0.0
         self.totalDistance = 0.0
+        self.spendableCarbonPoints = 0
         self.createdAt = Date()
     }
-    init(id: UUID, appleUserIdentifier: String, name: String, email: String, bikeSerialNumber: String?, substitutedVehicle: SubstitutedVehicle?, totalCarbonPoints: Int, totalCO2Avoided: Double, totalDistance: Double, createdAt: Date, frequency: String = "", routes: [String] = []) {
-            self.id = id
-            self.appleUserIdentifier = appleUserIdentifier
-            self.name = name
-            self.email = email
-            self.bikeSerialNumber = bikeSerialNumber
-            self.substitutedVehicleRawValue = substitutedVehicle?.rawValue ?? ""
-            self.totalCarbonPoints = totalCarbonPoints
-            self.totalCO2Avoided = totalCO2Avoided
-            self.totalDistance = totalDistance
-            self.createdAt = createdAt
-            
-            // Novos campos (Se o CloudKit ainda não os tiver, ficam vazios por padrão)
-            self.frequency = frequency
-            self.routes = routes
-        }
+    init(id: UUID, appleUserIdentifier: String, name: String, email: String, bikeSerialNumber: String?, substitutedVehicle: SubstitutedVehicle?, totalCarbonPoints: Int, totalCO2Avoided: Double, totalDistance: Double, createdAt: Date, frequency: String = "", routes: [String] = [], spendableCarbonPoints: Int) {
+        self.id = id
+        self.appleUserIdentifier = appleUserIdentifier
+        self.name = name
+        self.email = email
+        self.bikeSerialNumber = bikeSerialNumber
+        self.substitutedVehicleRawValue = substitutedVehicle?.rawValue ?? ""
+        self.totalCarbonPoints = totalCarbonPoints
+        self.totalCO2Avoided = totalCO2Avoided
+        self.spendableCarbonPoints = spendableCarbonPoints
+        self.totalDistance = totalDistance
+        self.createdAt = createdAt
+        
+        // Novos campos (Se o CloudKit ainda não os tiver, ficam vazios por padrão)
+        self.frequency = frequency
+        self.routes = routes
+    }
     
     // Propriedade auxiliar para nos dar o Enum correto no resto da app
     var substitutedVehicle: SubstitutedVehicle? {

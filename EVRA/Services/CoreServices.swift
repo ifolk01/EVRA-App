@@ -66,6 +66,7 @@ class CloudKitService {
         record["totalCO2Avoided"] = user.totalCO2Avoided as CKRecordValue
         record["totalDistance"] = user.totalDistance as CKRecordValue
         record["createdAt"] = user.createdAt as CKRecordValue
+        record["spendableCarbonPoints"] = user.spendableCarbonPoints as CKRecordValue
         
         do {
             _ = try await privateDB.save(record)
@@ -274,6 +275,7 @@ extension CloudKitService {
             let totalCO2Avoided = record["totalCO2Avoided"] as? Double ?? 0.0
             let totalDistance = record["totalDistance"] as? Double ?? 0.0
             let createdAt = record["createdAt"] as? Date ?? Date()
+            let spendableCarbonPoints = record["spendableCarbonPoints"] as? Int ?? totalCarbonPoints
             
             let bikeSerialNumber = record["bikeSerialNumber"] as? String
             var subVehicle: SubstitutedVehicle? = nil
@@ -291,7 +293,8 @@ extension CloudKitService {
                 totalCarbonPoints: totalCarbonPoints,
                 totalCO2Avoided: totalCO2Avoided,
                 totalDistance: totalDistance,
-                createdAt: createdAt
+                createdAt: createdAt,
+                spendableCarbonPoints: spendableCarbonPoints
             )
         }
     

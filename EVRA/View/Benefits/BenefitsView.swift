@@ -15,8 +15,8 @@ struct BenefitsGalleryView: View {
     @State private var selectedCoupon: PartnerCoupon? = nil
    
     private var currentPoints: Int {
-            homeVM.currentUser?.totalCarbonPoints ?? 0
-        }
+        homeVM.currentUser?.spendableCarbonPoints ?? 0
+    }
     
     var body: some View {
         ZStack {
@@ -169,7 +169,7 @@ struct BenefitsGalleryView: View {
             // 🔥 Integração em tempo real com o SwiftData!
             if let user = homeVM.currentUser {
                 withAnimation {
-                    user.totalCarbonPoints -= coupon.costInPoints
+                    user.spendableCarbonPoints -= coupon.costInPoints
                 }
                 
                 do {

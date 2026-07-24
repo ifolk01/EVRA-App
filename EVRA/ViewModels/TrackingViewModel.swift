@@ -215,6 +215,7 @@ class TrackingViewModel {
                     user.totalDistance += distanceInKm
                     user.totalCO2Avoided += co2AvoidedGrams // Em gramas, para precisão
                     user.totalCarbonPoints += self.carbonPoints
+                    user.spendableCarbonPoints += self.carbonPoints
                 }
                 
                 do {
@@ -375,8 +376,13 @@ class TrackingViewModel {
                     }
                 }
                 
+                let dateFormatter = DateFormatter()
+                dateFormatter.dateFormat = "MM-yyyy"
+                let currentMonthYear = dateFormatter.string(from: Date())
+                
+                
                 let userVehicle = UserDefaults.standard.string(forKey: "user_substituted_vehicle") ?? "Ciclista"
-                let groupName = "\(userVehicle) - \(city)"
+                let groupName = "\(userVehicle) - \(city) - \(currentMonthYear)"
                 let userName = activeUser?.name ?? "Ciclista Desconhecido"
                 let userAppleID = UserDefaults.standard.string(forKey: "apple_user_id") ?? "usuario_anonimo"
                 

@@ -36,14 +36,22 @@ struct CarbonPointsDetailView: View {
                                 .foregroundColor(.gray)
                             
                             let totalPoints = homeVM.currentUser?.totalCarbonPoints ?? 0
+                            let spendablePoints = homeVM.currentUser?.spendableCarbonPoints ?? 0
+                            
                             Text("\(totalPoints)")
                                 .font(.system(size: 48, weight: .black, design: .rounded))
                                 .foregroundColor(.black)
                             
-                            Text("pontos ecológicos totais")
+                            Text("XP Acumulado (Não se perde)")
                                 .font(.caption)
                                 .fontWeight(.bold)
                                 .foregroundColor(AppColors.levBlue)
+                            
+                            Text("Saldo disponível para compras: \(spendablePoints) pts")
+                                    .font(.subheadline)
+                                    .fontWeight(.bold)
+                                    .foregroundColor(.green)
+                                    .padding(.top, 8)
                         }
                     }
                     .frame(maxWidth: .infinity)

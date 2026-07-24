@@ -325,6 +325,7 @@ struct ProfilePreferencesSection: View {
                                     withAnimation(.interactiveSpring(response: 0.5, dampingFraction: 0.6, blendDuration: 0.6)) {
                                         substitutedVehicle = option.value
                                     }
+                                    UserDefaults.standard.set(option.value.rawValue, forKey: "user_substituted_vehicle")
                                     onSave("Veículo habitual alterado para \(option.label) com sucesso!", true)
                                 }
                         }
@@ -381,7 +382,7 @@ struct ProfilePreferencesSection: View {
                     .foregroundColor(.gray)
                 
                 HStack {
-                    TextField("Ex: LEV-2026-9812", text: $bikeSerialNumber)
+                    TextField("Ex: QWD-2026-9812", text: $bikeSerialNumber)
                         .textFieldStyle(RoundedBorderTextFieldStyle())
                     
                     Button(action: {
@@ -421,7 +422,7 @@ struct PartnerCoupon: Identifiable {
 let availableCoupons: [PartnerCoupon] = [
     PartnerCoupon(company: "FARM", offer: "15% OFF", description: "Em toda a nova coleção de verão.", costInPoints: 300, brandColor: Color.orange, iconName: "leaf.fill"),
     PartnerCoupon(company: "Magalu", offer: "Frete Grátis", description: "Válido para produtos selecionados na app.", costInPoints: 150, brandColor: Color.blue, iconName: "bag.fill"),
-    PartnerCoupon(company: "Centauro", offer: "R$ 50 de Desconto", description: "Nas compras acima de R$ 200 em artigos desportivos.", costInPoints: 500, brandColor: Color.red, iconName: "figure.run"),
+    PartnerCoupon(company: "Centauro", offer: "R$ 50 de Desconto", description: "Nas compras acima de R$ 200.", costInPoints: 500, brandColor: Color.red, iconName: "figure.run"),
     PartnerCoupon(company: "iFood", offer: "Cupom de R$ 20", description: "Válido para o seu próximo pedido.", costInPoints: 400, brandColor: Color.red.opacity(0.8), iconName: "takeoutbag.and.cup.and.straw")
 ]
 
@@ -432,7 +433,7 @@ struct DashboardBenefitsLinkCard: View {
 
     var body: some View {
         
-        let currentPoints = homeVM.currentUser?.totalCarbonPoints ?? 0
+        let currentPoints = homeVM.currentUser?.spendableCarbonPoints ?? 0
         NavigationLink(destination: BenefitsGalleryView(homeVM: homeVM)){
             HStack(spacing: 16) {
                 // Ícone de Destaque
@@ -469,7 +470,7 @@ struct DashboardBenefitsLinkCard: View {
             .cornerRadius(24)
             .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 5)
         }
-        .buttonStyle(PlainButtonStyle())
+       
     }
 }
 

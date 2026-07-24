@@ -9,7 +9,6 @@ import SwiftData
 
 struct ProfileView: View {
    
-    @AppStorage("SubstitutingVehicle") var substitutedVehicle: SubstitutedVehicle = .car
 
     @Bindable var homeVM: HomeViewModel
     @Environment(AppRouter.self) private var router
@@ -111,7 +110,7 @@ struct ProfileView: View {
                             .cornerRadius(12)
                     }
                     .padding(.horizontal, 16)
-                    .padding(.top, 20)
+                    .padding(.bottom, 20)
                 }
             }
             .background(AppColors.levGreenBg.edgesIgnoringSafeArea(.all))

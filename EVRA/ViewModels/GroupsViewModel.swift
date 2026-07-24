@@ -67,6 +67,9 @@ class GroupsViewModel: NSObject, ObservableObject, CLLocationManagerDelegate {
                             }
                         }
                     }
+                    let dateFormatter = DateFormatter()
+                    dateFormatter.dateFormat = "MM-yyyy"
+                    let currentMonthYear = dateFormatter.string(from: Date())
                     
                     var city = "Local Desconhecido"
                     if let item = mapItems.first, let addressRep = item.addressRepresentations {
@@ -76,16 +79,21 @@ class GroupsViewModel: NSObject, ObservableObject, CLLocationManagerDelegate {
                     let userVehicle = UserDefaults.standard.string(forKey: "user_substituted_vehicle") ?? "Ciclista"
                     self.groupName = "\(userVehicle) - \(city)"
                     
-                    // 🔥 O chamamento agora usa 'await'
-                    await self.fetchGroupData(for: self.groupName)
+                    let searchGroup = "\(userVehicle) - \(city) - \(currentMonthYear)"
+                    await self.fetchGroupData(for: searchGroup)
                     
                 } catch {
                     print("Erro ao localizar a cidade via MapKit: \(error.localizedDescription)")
+                    
+                    let dateFormatter = DateFormatter()
+                    dateFormatter.dateFormat = "MM-yyyy"
+                    let currentMonthYear = dateFormatter.string(from: Date())
+                    
                     let userVehicle = UserDefaults.standard.string(forKey: "user_substituted_vehicle") ?? "Ciclista"
                     self.groupName = "\(userVehicle) - Local Desconhecido"
                     
-                    // 🔥 O chamamento agora usa 'await'
-                    await self.fetchGroupData(for: self.groupName)
+                    let searchGroup = "\(userVehicle) - Local Desconhecido - \(currentMonthYear)"
+                    await self.fetchGroupData(for: searchGroup)
                 }
             }
         }

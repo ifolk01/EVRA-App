@@ -55,6 +55,7 @@ struct MainTabView: View {
                     // 🔥 Injeta o utilizador instantaneamente assim que a TabBar carrega
                     if let user = savedUsers.first {
                         homeVM.currentUser = user
+                        UserDefaults.standard.set(user.substitutedVehicleRawValue, forKey: "user_substituted_vehicle")
                     }
                     
                     locationManager.requestWhenInUseAuthorization()
@@ -63,6 +64,7 @@ struct MainTabView: View {
                 .onChange(of: savedUsers) { _, users in
                     if let user = users.first {
                         homeVM.currentUser = user
+                        UserDefaults.standard.set(user.substitutedVehicleRawValue, forKey: "user_substituted_vehicle")
                     }
                 }
             }
