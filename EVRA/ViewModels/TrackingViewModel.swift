@@ -43,6 +43,7 @@ class TrackingViewModel {
     
     var activeContext: ModelContext?
     var activeUser: User?
+    var showNameRequiredAlert: Bool = false
     
     // Fatores de Emissão
     var emissionFactorReplaced: Double = 0.0
@@ -165,7 +166,14 @@ class TrackingViewModel {
     // MARK: - CONTROLOS DA VIAGEM
     
     func startRide() {
-            setupEmissionFactor() 
+        
+            let currentName = activeUser?.name.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+            if currentName == "Ciclista" || currentName.isEmpty {
+                showNameRequiredAlert = true // Dispara o gatilho do alerta na View
+                return // Aborta o início da corrida imediatamente!
+            }
+        
+            setupEmissionFactor()
             currentState = .tracking
             durationInSeconds = 0
             rideStartTime = Date()

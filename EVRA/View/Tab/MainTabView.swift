@@ -33,7 +33,7 @@ struct MainTabView: View {
                             }
             
             
-            TrackingRecordView(trackingVM: trackingVM, homeVM: homeVM)
+            TrackingRecordView(homeVM: homeVM)
                             .tabItem {
                                 Label("Pedalar", systemImage: "record.circle")
                             }

@@ -3,8 +3,8 @@ import SwiftData
 internal import HealthKit
 
 struct HomeDashboardView: View {
-    @State private var trackingVM = TrackingViewModel()
-    @Environment(\.modelContext) private var modelContext
+        @Environment(TrackingViewModel.self) private var trackingVM
+        @Environment(\.modelContext) private var modelContext
     
     var homeVM: HomeViewModel
 

@@ -5,7 +5,6 @@
 //  Created by Filipe Pinto Cunha on 13/07/26.
 //
 
-
 import SwiftUI
 import SwiftData
 import AuthenticationServices
@@ -17,58 +16,29 @@ struct LoginView: View {
     @AppStorage("isLoggedIn") var isLoggedIn: Bool = false
     @Environment(HomeViewModel.self) private var homeVM
     
-    
+    // MARK: - Estados para o Popup de Recuperação
+    @State private var showNamePrompt = false
+    @State private var manualName: String = ""
+    @State private var manualEmail: String = ""
+    @State private var pendingAppleID: String = "" // Guarda o ID enquanto o usuário digita
     
     var body: some View {
         ZStack {
-            // Fundo verde característico da marca Lev
             AppColors.levGreenBg.ignoresSafeArea()
             
             VStack(spacing: 40) {
-                
                 // Logo e Branding
                 VStack(spacing: 12) {
-                    
-                    
                     HStack(spacing: 7) {
-                        Image("Letter_V_plain")
-                            .resizable()
-                            .scaledToFit()
-                            .frame(width: 35, height: 35)
-                        
-                        
-                        Image("Letter_E_plain")
-                            .resizable()
-                            .scaledToFit()
-                            .frame(width: 35, height: 35)
-                        
-                        
-                        
-                        Image("Letter_L_plain")
-                            .resizable()
-                            .scaledToFit()
-                            .frame(width: 35, height: 35)
-                        
-                        
-                        Image("Letter_O_plain")
-                            .resizable()
-                            .scaledToFit()
-                            .frame(width: 35, height: 35)
-                        
-                        
-                        Image("Letter_S_plain")
-                            .resizable()
-                            .scaledToFit()
-                            .frame(width: 35, height: 35)
-                        
-                        
-                        
+                        Image("Letter_V_plain").resizable().scaledToFit().frame(width: 35, height: 35)
+                        Image("Letter_E_plain").resizable().scaledToFit().frame(width: 35, height: 35)
+                        Image("Letter_L_plain").resizable().scaledToFit().frame(width: 35, height: 35)
+                        Image("Letter_O_plain").resizable().scaledToFit().frame(width: 35, height: 35)
+                        Image("Letter_S_plain").resizable().scaledToFit().frame(width: 35, height: 35)
                     }
                     Spacer()
                     
-                    Image("logoVelos")
-                        .resizable()
-                        .scaledToFit()
+                    Image("logoVelos").resizable().scaledToFit()
                     
                     Text("Seu trajeto agora vale mais.")
                         .font(.system(size: 25, weight: .bold))
@@ -82,12 +52,9 @@ struct LoginView: View {
                 }
                 
                 Spacer()
+                
                 // Botões de Autenticação
                 VStack(spacing: 39) {
-                    
-                    
-                    
-                    // Botão Apple (Nativo)
                     SignInWithAppleButton(
                         .signIn,
                         onRequest: { request in request.requestedScopes = [.fullName, .email] },
@@ -97,55 +64,38 @@ struct LoginView: View {
                                 
                                 viewModel.processAppleSignInResult(credential: credential)
                                 let appleID = viewModel.appleUserIdentifier
-                                
                                 UserDefaults.standard.set(appleID, forKey: "apple_user_id")
-                                // Usamos uma Task para fazer a chamada assíncrona ao CloudKit
+                                
                                 Task {
-                                                // 1. Busca na nuvem em background
-                                                await homeVM.fetchDashboardData(appleUserId: appleID)
-                                                
-                                                // 🔥 2. TUDO O QUE MEXE NO SWIFTDATA TEM DE RODAR NO MAINACTOR!
-                                                await MainActor.run {
-                                                    if let recoveredUser = homeVM.currentUser {
-                                                        
-                                                        // 👻 CAÇA-FANTASMAS: Se a Apple deu um nome real agora, mas a nuvem tem o fantasma antigo, atualizamos!
-                                                        if !viewModel.name.isEmpty && recoveredUser.name == "Ciclista" {
-                                                            recoveredUser.name = viewModel.name
-                                                            recoveredUser.email = viewModel.email
-                                                            // Envia o nome real para curar a nuvem
-                                                            Task { try? await CloudKitService().saveUser(recoveredUser) }
-                                                        }
-                                                        
-                                                        modelContext.insert(recoveredUser)
-                                                        try? modelContext.save()
-                                                        isLoggedIn = true
-                                                        
-                                                    } else {
-                                                        // 3. Se não achou, é novo!
-                                                        let userName = viewModel.name.isEmpty ? "Ciclista" : viewModel.name
-                                                        let userEmail = viewModel.email.isEmpty ? "email@exemplo.com" : viewModel.email
-                                                        
-                                                        let newUser = User(
-                                                            appleUserIdentifier: appleID,
-                                                            name: userName,
-                                                            email: userEmail,
-                                                            bikeSerialNumber: "",
-                                                            substitutedVehicleRawValue: SubstitutedVehicle.car.rawValue,
-                                                            frequency: "",
-                                                            routes: []
-                                                        )
-                                                        
-                                                        modelContext.insert(newUser)
-                                                        try? modelContext.save()
-                                                        homeVM.currentUser = newUser
-                                                        
-                                                        // Salva o utilizador NOVO na nuvem
-                                                        Task { try? await CloudKitService().saveUser(newUser) }
-                                                        
-                                                        isLoggedIn = true
-                                                    }
-                                                }
+                                    await homeVM.fetchDashboardData(appleUserId: appleID)
+                                    
+                                    await MainActor.run {
+                                        if let recoveredUser = homeVM.currentUser {
+                                            // 1. UTILIZADOR EXISTENTE NA BASE DE DADOS
+                                            if !viewModel.name.isEmpty && recoveredUser.name == "Ciclista" {
+                                                recoveredUser.name = viewModel.name
+                                                recoveredUser.email = viewModel.email
+                                                Task { try? await CloudKitService().saveUser(recoveredUser) }
                                             }
+                                            modelContext.insert(recoveredUser)
+                                            try? modelContext.save()
+                                            isLoggedIn = true
+                                            router.currentState = .main
+                                            
+                                        } else {
+                                            // 2. UTILIZADOR NÃO ENCONTRADO (Novo ou Apagado)
+                                            if viewModel.name.isEmpty {
+                                                // ⚠️ A Apple escondeu o nome (Utilizador apagou a conta e voltou)
+                                                // Pausamos o fluxo e abrimos o popup!
+                                                pendingAppleID = appleID
+                                                showNamePrompt = true
+                                            } else {
+                                                // ✅ Primeira vez de sempre (A Apple enviou os dados)
+                                                createNewUserAndLogin(appleID: appleID, name: viewModel.name, email: viewModel.email)
+                                            }
+                                        }
+                                    }
+                                }
                             }
                         }
                     )
@@ -154,31 +104,40 @@ struct LoginView: View {
                     .cornerRadius(12)
                 }
                 
-                // Separador "ou"
-                //                Text("ou")
-                //                    .foregroundColor(.gray)
-                //
-                //                // Botão E-mail
-                //                Button(action: {}) {
-                //                    Text("Criar conta com e-mail →")
-                //                        .foregroundColor(.white)
-                //                        .frame(maxWidth: .infinity)
-                //                        .padding()
-                //                        .background(AppColors.levBlue)
-                //                        .cornerRadius(12)
-                //                }
-                
-                // Termos
                 Text("Ao continuar, você concorda com nossos Termos de Uso e Política de Privacidade")
                     .font(.caption2)
                     .multilineTextAlignment(.center)
                     .foregroundColor(.black.opacity(0.4))
-                
-                
             }
             .padding(24)
         }
+
+
+    }
+    
+    // MARK: - Função Auxiliar para Criar e Logar
+    private func createNewUserAndLogin(appleID: String, name: String, email: String) {
+        let safeAppleName = viewModel.name.trimmingCharacters(in: .whitespacesAndNewlines)
+        let userName = safeAppleName.isEmpty ? "Ciclista" : safeAppleName
+
+        let newUser = User(
+            appleUserIdentifier: appleID,
+            name: userName,
+            email: viewModel.email.isEmpty ? "email@exemplo.com" : viewModel.email,
+            bikeSerialNumber: "",
+            substitutedVehicleRawValue: SubstitutedVehicle.car.rawValue,
+            frequency: "",
+            routes: []
+        )
         
+        modelContext.insert(newUser)
+        try? modelContext.save()
+        homeVM.currentUser = newUser
+        
+        Task { try? await CloudKitService().saveUser(newUser) }
+        
+        isLoggedIn = true
+        router.currentState = .main
     }
 }
 

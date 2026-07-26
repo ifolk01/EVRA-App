@@ -31,25 +31,13 @@ struct VelosApp: App {
     
     var body: some Scene {
             WindowGroup {
-                if isLoggedIn {
-                    // 3. Passamos o homeVM para a TabView principal
-                    MainTabView(homeVM: homeVM, trackingVM: trackingVM)
-                        .preferredColorScheme(.light)
-                        .environment(router)
-                        .environment(homeVM)
-                        .onAppear {
-                            // Injeta o utilizador salvo no ViewModel assim que a tela abre
-                          
-                            
-                            checkAppleLoginState()
-                        }
-                    
-                } else {
-                    LoginView()
-                        .environment(router)
-                        .environment(onboardingVM)
-                        .environment(homeVM)
-                }
+                // Removemos o "if isLoggedIn" e deixamos a RootView assumir o controle!
+                RootView()
+                    .preferredColorScheme(.light)
+                    .environment(router)
+                    .environment(homeVM)
+                    .environment(onboardingVM)
+                    .environment(trackingVM)
             }
             .modelContainer(for: [User.self, LocalRide.self])
             .onChange(of: scenePhase) { oldPhase, newPhase in
@@ -61,8 +49,6 @@ struct VelosApp: App {
                     }
                 }
             }
-        
-        
         }
     
     private func checkAppleLoginState() {

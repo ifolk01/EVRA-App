@@ -14,7 +14,7 @@ import MapKit // 🔥 Adicionado para o fundo imersivo
 
 struct TrackingRecordView: View {
     // Recebe as ViewModels injetadas
-    var trackingVM: TrackingViewModel
+    @Environment(TrackingViewModel.self) private var trackingVM
     var homeVM: HomeViewModel
     @Environment(\.modelContext) private var modelContext
     
@@ -26,6 +26,7 @@ struct TrackingRecordView: View {
     @State private var cameraPosition: MapCameraPosition = .userLocation(fallback: .automatic)
     
     var body: some View {
+        @Bindable var bindableVM = trackingVM
         ZStack(alignment: .bottom) {
             
             // MARK: - 1. O Mapa em Background
@@ -170,6 +171,12 @@ struct TrackingRecordView: View {
                 }
                 .padding(.top, 10)
             }
+            .alert("Falta pouco!", isPresented: $bindableVM.showNameRequiredAlert) {
+                        Button("Entendido", role: .cancel) { }
+                    } message: {
+                        Text("Para iniciarmos o rastreio e contabilizar os seus pontos no Ranking, por favor, vá à aba 'Perfil' e adicione o seu nome.")
+                    }
+            
             .padding(24)
             .background(
                 RoundedRectangle(cornerRadius: 32)
@@ -271,6 +278,3 @@ struct TrackingRecordView: View {
     }
 }
 
-#Preview {
-    TrackingRecordView(trackingVM: TrackingViewModel(), homeVM: HomeViewModel())
-}

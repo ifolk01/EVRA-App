@@ -8,15 +8,20 @@ import SwiftUI
 import SwiftData
 
 struct ProfileView: View {
-   
-
+    
     @Bindable var homeVM: HomeViewModel
     @Environment(AppRouter.self) private var router
     @Environment(\.modelContext) private var modelContext
     
-    // Estados para controlar o alerta visual na identidade da app
+    // Estados para alertas e exclusão
     @State private var showAlert = false
     @State private var successMessage = ""
+    @State private var mostrarAlertaExclusao = false
+    
+    // MARK: - Novos Estados para Edição de Perfil
+    @State private var isEditingProfile = false
+    @State private var editName = ""
+    @State private var editEmail = ""
     
     var body: some View {
         NavigationStack {
@@ -35,9 +40,20 @@ struct ProfileView: View {
                             )
                         
                         VStack(spacing: 4) {
-                            Text(homeVM.currentUser?.name ?? "Ciclista")
-                                .font(.title2)
-                                .fontWeight(.bold)
+                            HStack {
+                                Text(homeVM.currentUser?.name ?? "Ciclista")
+                                    .font(.title2)
+                                    .fontWeight(.bold)
+                                
+                                // O BOTÃO DE EDITAR
+                                Button(action: {
+                                    prepararEdicao()
+                                }) {
+                                    Image(systemName: "pencil.circle.fill")
+                                        .foregroundColor(AppColors.levBlue)
+                                        .font(.title3)
+                                }
+                            }
                             
                             Text(homeVM.currentUser?.email ?? "email@exemplo.com")
                                 .font(.subheadline)
@@ -64,14 +80,15 @@ struct ProfileView: View {
                             onSave: { message, shouldAlert in
                                 do {
                                     try modelContext.save()
-                                    print("💾 Alterações persistidas com sucesso na base local!")
+                                    // Sincroniza com a nuvem também as preferências
+                                    Task { try? await CloudKitService().saveUser(user) }
                                     
                                     if shouldAlert {
                                         successMessage = message
                                         showAlert = true
                                     }
                                 } catch {
-                                    print("❌ Erro ao salvar: \(error.localizedDescription)")
+                                    print("❌ Erro ao salvar preferências: \(error.localizedDescription)")
                                 }
                             }
                         )
@@ -80,27 +97,11 @@ struct ProfileView: View {
                                             
                     Spacer(minLength: 40)
                     
-                    
+                    // 3. Botão de Excluir Conta Permanentemente
                     Button(action: {
-                        if let user = homeVM.currentUser {
-                            let userId = user.id
-                            
-                            // 1. Apaga do CloudKit em background (Exigência Apple)
-                            Task {
-                                let ckService = CloudKitService()
-                                try? await ckService.deleteUser(userId: userId)
-                            }
-                            
-                            // 2. Apaga localmente do SwiftData
-                            modelContext.delete(user)
-                            try? modelContext.save()
-                        }
-                        
-                        // 3. Limpa sessão e volta ao Login
-                        UserDefaults.standard.removeObject(forKey: "apple_user_id")
-                        UserDefaults.standard.set(false, forKey: "isLoggedIn")
+                        mostrarAlertaExclusao = true
                     }) {
-                        Text("Terminar sessão")
+                        Text("Excluir Conta Permanentemente")
                             .foregroundColor(.red)
                             .font(.subheadline)
                             .fontWeight(.bold)
@@ -109,6 +110,31 @@ struct ProfileView: View {
                             .background(Color.red.opacity(0.1))
                             .cornerRadius(12)
                     }
+                    .alert("Excluir Conta Permanentemente?", isPresented: $mostrarAlertaExclusao) {
+                        Button("Cancelar", role: .cancel) { }
+                        
+                        Button("Excluir Tudo", role: .destructive) {
+                            if let user = homeVM.currentUser {
+                                let userId = user.id
+                                
+                                Task {
+                                    let ckService = CloudKitService()
+                                    try? await ckService.deleteUser(userId: userId)
+                                }
+                                
+                                modelContext.delete(user)
+                                try? modelContext.save()
+                            }
+                            
+                            UserDefaults.standard.removeObject(forKey: "apple_user_id")
+                            UserDefaults.standard.set(false, forKey: "isLoggedIn")
+                            
+                            // Redireciona o utilizador de volta ao início
+                            router.currentState = .login
+                        }
+                    } message: {
+                        Text("Esta ação é irreversível. Todos os seus dados, histórico de pedaladas e Carbon Points serão apagados permanentemente.")
+                    }
                     .padding(.horizontal, 16)
                     .padding(.bottom, 20)
                 }
@@ -116,17 +142,90 @@ struct ProfileView: View {
             .background(AppColors.levGreenBg.edgesIgnoringSafeArea(.all))
             .navigationTitle("Meu Perfil")
             .navigationBarTitleDisplayMode(.inline)
-            // Alerta de confirmação ancorado na view principal
-            .alert("Alteração Guardada", isPresented: $showAlert) {
+            
+            // Alerta de sucesso geral
+            .alert("Sucesso", isPresented: $showAlert) {
                 Button("OK", role: .cancel) { }
             } message: {
                 Text(successMessage)
             }
+            
+            // MARK: - Janela de Edição de Dados Pessoais
+            .sheet(isPresented: $isEditingProfile) {
+                NavigationStack {
+                    Form {
+                        Section(header: Text("Informações Públicas")) {
+                            TextField("O seu nome", text: $editName)
+                                .textContentType(.name)
+                            
+                            TextField("O seu e-mail", text: $editEmail)
+                                .keyboardType(.emailAddress)
+                                .autocapitalization(.none)
+                                .textContentType(.emailAddress)
+                        }
+                    }
+                    .navigationTitle("Editar Perfil")
+                    .navigationBarTitleDisplayMode(.inline)
+                    .toolbar {
+                        ToolbarItem(placement: .cancellationAction) {
+                            Button("Cancelar") { isEditingProfile = false }
+                        }
+                        ToolbarItem(placement: .confirmationAction) {
+                            Button("Guardar") {
+                                salvarDadosPessoais()
+                            }
+                            // Impede de guardar um nome totalmente em branco
+                            .disabled(editName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                        }
+                    }
+                }
+                .presentationDetents([.medium])
+            }
         }
-        
         .onAppear { AnalyticsManager.shared.trackScreen("Tab_Profile") }
     }
     
+    // MARK: - Lógica de Edição de Perfil
+    
+    private func prepararEdicao() {
+        // Se for "Ciclista", entregamos o campo vazio para ele não ter de apagar a palavra
+        let nomeAtual = homeVM.currentUser?.name ?? ""
+        editName = (nomeAtual == "Ciclista") ? "" : nomeAtual
+        
+        let emailAtual = homeVM.currentUser?.email ?? ""
+        editEmail = (emailAtual == "email@exemplo.com") ? "" : emailAtual
+        
+        isEditingProfile = true
+    }
+    
+    private func salvarDadosPessoais() {
+        guard let user = homeVM.currentUser else { return }
+        let novoNome = editName.trimmingCharacters(in: .whitespacesAndNewlines)
+        
+        user.name = novoNome.isEmpty ? "Ciclista" : novoNome
+        user.email = editEmail.trimmingCharacters(in: .whitespacesAndNewlines)
+        
+        // 1. Salva localmente (SwiftData garante que a interface atualiza de imediato)
+        do {
+            try modelContext.save()
+            
+            // 2. Dispara a atualização para o CloudKit em background (A Base do Ranking!)
+            Task {
+                let ckService = CloudKitService()
+                try? await ckService.saveUser(user)
+            }
+            
+            // 3. Feedback visual
+            successMessage = "Os seus dados foram atualizados e sincronizados com sucesso!"
+            showAlert = true
+            isEditingProfile = false
+            
+        } catch {
+            print("❌ Erro ao guardar o perfil: \(error.localizedDescription)")
+        }
+    }
+    
+    // MARK: - Funções Auxiliares
     private func getInitials(from name: String) -> String {
         let words = name.split(separator: " ")
         if words.count >= 2 {
@@ -138,9 +237,4 @@ struct ProfileView: View {
         }
         return "CL"
     }
-}
-
-#Preview {
-    ProfileView(homeVM: HomeViewModel())
-        .environment(AppRouter())
 }
