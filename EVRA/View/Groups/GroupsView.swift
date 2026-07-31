@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct GroupsView: View {
-    @StateObject private var viewModel = GroupsViewModel() // 🔥 O cérebro foi ligado!
+    @StateObject private var viewModel = GroupsViewModel()
     @State private var selectedTab = 0
     
     var body: some View {
@@ -18,89 +18,76 @@ struct GroupsView: View {
                 
                 VStack(spacing: 0) {
                     
-                    // MARK: - Cabeçalho do Grupo
-                    VStack(spacing: 8) {
-//                        Image(systemName: "graduationcap.fill")
-//                            .font(.system(size: 20))
-//                            .foregroundColor(AppColors.levBlue)
-//                            .padding()
-//                            .background(Circle().fill(Color.white.opacity(0.8)))
-//                            .shadow(radius: 5)
+                    // MARK: - 1. Novo Cabeçalho (Estilo Pílula da Imagem)
+                    HStack {
+                        HStack(spacing: 8) {
+                            Image(systemName: "mappin.and.ellipse")
+                                .foregroundColor(.black)
+                            Text(viewModel.groupName)
+                                .font(.subheadline)
+                                .fontWeight(.semibold)
+                                .foregroundColor(.black)
+                      
+                        }
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 10)
+                        .background(Color.white)
+                        .clipShape(Capsule())
+                        .shadow(color: .black.opacity(0.05), radius: 5, x: 0, y: 2)
                         
-                        Text(viewModel.groupName) // 🔥 Nome real do Geocoding
-                            .font(.title2)
-                            .fontWeight(.black)
-                            .foregroundColor(.black)
+                        Spacer()
                         
-                        Text("\(viewModel.memberCount) ciclistas ativos") // 🔥 Contagem real do CloudKit
-                            .font(.subheadline)
-                            .foregroundColor(.black.opacity(0.7))
-                    }
-                    .padding(.top, 20)
-                    .padding(.bottom, 30)
                     
-                    Picker("Visão", selection: $selectedTab) {
-                        Text("Ranking Mensal").tag(0)
-                        Text("Feed ao Vivo").tag(1)
                     }
-                    .pickerStyle(SegmentedPickerStyle())
                     .padding(.horizontal, 24)
+                    .padding(.top, 10)
                     .padding(.bottom, 20)
                     
-                    
-                    
                     ScrollView(showsIndicators: false) {
-                        if selectedTab == 0 {
-                            // 🔥 Passa os dados reais para a secção de ranking
-                            RankingSection(rankings: viewModel.rankings)
-                        } else {
-                            LiveFeedSection(feed: viewModel.liveFeed)                        }
+                        VStack(spacing: 24) {
+                            
+                            // MARK: - 2. Carrossel de Destaques (Interatividade)
+                            HighlightsCarouselView(
+                                                    globalLeader: viewModel.globalTopUser,
+                                                    globalPoints: viewModel.globalTopPoints,
+                                                    topCity: viewModel.topActiveCity,
+                                                    topVehicle: viewModel.topVehicle,
+                                                    localMembers: viewModel.memberCount,
+                                                    isLoading: viewModel.isLoadingHighlights
+                                                )
+                            
+                            // MARK: - 3. Toggle de Visão
+                            Picker("Visão", selection: $selectedTab) {
+                                Text("Feed ao Vivo").tag(0)
+                                Text("Ranking Mensal").tag(1)
+                            }
+                            .pickerStyle(SegmentedPickerStyle())
+                            .padding(.horizontal, 24)
+                            
+                            // MARK: - 4. Conteúdo Principal
+                            if selectedTab == 0 {
+                                LiveFeedSection(feed: viewModel.liveFeed)
+                            } else {
+                                RankingSection(rankings: viewModel.rankings)
+                            }
+                        }
+                        .padding(.bottom, 30)
                     }
                     .refreshable {
-                                            await viewModel.refreshData()
-                                        }
+                        await viewModel.refreshData()
+                    }
                 }
             }
             .navigationBarHidden(true)
+            .onAppear {
+                    
+                            viewModel.checkVehiclePreference()
+                        }
         }
     }
 }
 
-struct LiveFeedSection: View {
-    var feed: [GroupsViewModel.FeedActivity]
-    
-    var body: some View {
-        VStack(spacing: 16) {
-            if feed.isEmpty {
-                Text("Ainda sem atividades recentes no grupo.\nSeja o primeiro a pedalar! ")
-                    .foregroundColor(.gray)
-                    .multilineTextAlignment(.center)
-                    .padding(.top, 40)
-            } else {
-                ForEach(feed) { activity in
-                    FeedCard(
-                        name: activity.name,
-                        action: activity.action,
-                        distance: String(format: "%.1f km", activity.distance),
-                        time: timeAgoString(from: activity.timestamp)
-                    )
-                }
-            }
-        }
-        .padding(.horizontal, 24)
-        .padding(.top, 20)
-    }
-    
-    // Pequena função para transformar a data real em texto amigável (ex: "Há 5 min")
-    private func timeAgoString(from date: Date) -> String {
-        let minutes = Int(-date.timeIntervalSinceNow / 60)
-        if minutes < 1 { return "Agora mesmo" }
-        if minutes < 60 { return "Há \(minutes) min" }
-        let hours = minutes / 60
-        if hours < 24 { return "Há \(hours)h" }
-        return "Há mais de 1 dia"
-    }
-}
+
 
 // MARK: - Secção de Ranking (O Pódio)
 struct RankingSection: View {
@@ -109,7 +96,7 @@ struct RankingSection: View {
     var body: some View {
         VStack(spacing: 20) {
             if rankings.isEmpty {
-                Text("Seja o primeiro a pedalar neste grupo!")
+                Text("Seja o primeiro a pedalar!!")
                     .foregroundColor(.gray)
                     .padding(.top, 40)
             } else {
@@ -131,112 +118,9 @@ struct RankingSection: View {
 }
 
 
-// MARK: - Componentes Visuais
 
-struct PodiumBar: View {
-    var name: String
-    var points: String
-    var position: Int
-    var height: CGFloat
-    var color: Color
-    
-    var body: some View {
-        VStack(spacing: 8) {
-            Text(name)
-                .font(.caption)
-                .fontWeight(.bold)
-                .foregroundColor(.black)
-            
-            ZStack(alignment: .top) {
-                RoundedRectangle(cornerRadius: 12)
-                    .fill(AppColors.levBlue)
-                    .frame(width: 80, height: height)
-                
-                Circle()
-                    .fill(color)
-                    .frame(width: 30, height: 30)
-                    .overlay(Text("\(position)").font(.caption).bold().foregroundColor(.white))
-                    .offset(y: -15)
-            }
-            
-            Text("\(points) pts")
-                .font(.caption2)
-                .foregroundColor(.black.opacity(0.7))
-        }
-    }
-}
 
-struct RankingRow: View {
-    var position: Int
-    var name: String
-    var points: String
-    var co2: String
-    
-    var body: some View {
-        HStack {
-            Text("\(position)º")
-                .font(.headline)
-                .fontWeight(.bold)
-                .foregroundColor(.black.opacity(0.5))
-                .frame(width: 30, alignment: .leading)
-            
-            Text(name)
-                .font(.headline)
-                .foregroundColor(.black)
-            
-            Spacer()
-            
-            VStack(alignment: .trailing) {
-                Text(points)
-                    .font(.subheadline)
-                    .fontWeight(.bold)
-                    .foregroundColor(AppColors.levBlue)
-                Text("\(co2) CO2")
-                    .font(.caption2)
-                    .foregroundColor(.gray)
-            }
-        }
-        .padding()
-        .background(Color.white)
-        .cornerRadius(16)
-        
-    }
-}
 
-struct FeedCard: View {
-    var name: String
-    var action: String
-    var distance: String
-    var time: String
-    
-    var body: some View {
-        HStack(spacing: 16) {
-            Circle()
-                .fill(AppColors.levBlue.opacity(0.15))
-                .frame(width: 45, height: 45)
-                .overlay(Image(systemName: "bicycle").foregroundColor(AppColors.levBlue))
-            
-            VStack(alignment: .leading, spacing: 4) {
-                HStack(spacing: 4) {
-                    Text(name).fontWeight(.bold).foregroundColor(.black)
-                    Text(action).foregroundColor(.black.opacity(0.8))
-                }
-                .font(.subheadline)
-                .lineLimit(2)
-                
-                HStack {
-                    Text(distance).fontWeight(.bold).foregroundColor(AppColors.levBlue)
-                    Text("• \(time)").foregroundColor(.gray)
-                }
-                .font(.caption)
-            }
-            Spacer()
-        }
-        .padding()
-        .background(Color.white)
-        .cornerRadius(16)
-    }
-}
 
 #Preview {
     GroupsView()

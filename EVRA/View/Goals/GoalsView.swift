@@ -9,39 +9,47 @@ import SwiftUI
 import SwiftData
 
 struct GoalsView: View {
-    // 🔥 Puxa o histórico real do SwiftData e o Utilizador logado
     @Query(sort: \LocalRide.date, order: .reverse) private var allRides: [LocalRide]
-    var homeVM: HomeViewModel? // Opcional se injetado, mas podemos ler do ambiente ou modelo
+        
+
+        @Environment(HomeViewModel.self) private var homeVM
+        
+
+        private var myRides: [LocalRide] {
+            guard let myID = homeVM.currentUser?.appleUserIdentifier else { return [] }
+            return allRides.filter { $0.userAppleID == myID }
+        }
+   
     
     // Lógica para calcular os trajetos desta semana
     private var ridesThisWeek: Int {
-        let calendar = Calendar.current
-        let startOfWeek = calendar.dateInterval(of: .weekOfYear, for: Date())?.start ?? Date()
-        return allRides.filter { $0.date >= startOfWeek }.count
-    }
+            let calendar = Calendar.current
+            let startOfWeek = calendar.dateInterval(of: .weekOfYear, for: Date())?.start ?? Date()
+            return myRides.filter { $0.date >= startOfWeek }.count // <- Alterado
+        }
     
     // Lógica para calcular a distância total do mês
     private var totalDistanceThisMonth: Double {
-        let calendar = Calendar.current
-        let now = Date()
-        let startOfMonth = calendar.date(from: calendar.dateComponents([.year, .month], from: now)) ?? now
-        return allRides.filter { $0.date >= startOfMonth }.reduce(0) { $0 + $1.distance }
-    }
+            let calendar = Calendar.current
+            let now = Date()
+            let startOfMonth = calendar.date(from: calendar.dateComponents([.year, .month], from: now)) ?? now
+            return myRides.filter { $0.date >= startOfMonth }.reduce(0) { $0 + $1.distance } // <- Alterado
+        }
     
     // Lógica para calcular o CO2 total evitado (em kg)
     private var totalCO2Kg: Double {
-        let totalGrams = allRides.reduce(0) { $0 + $1.co2Avoided }
-        return totalGrams / 1000.0
-    }
+            let totalGrams = myRides.reduce(0) { $0 + $1.co2Avoided } // <- Alterado
+            return totalGrams / 1000.0
+        }
     
     // Identifica os dias da semana em que pedalou
     private var activeDaysThisWeek: Set<Int> {
-        let calendar = Calendar.current
-        let startOfWeek = calendar.dateInterval(of: .weekOfYear, for: Date())?.start ?? Date()
-        let ridesThisWeekList = allRides.filter { $0.date >= startOfWeek }
-        let weekdayNumbers = ridesThisWeekList.map { calendar.component(.weekday, from: $0.date) }
-        return Set(weekdayNumbers)
-    }
+            let calendar = Calendar.current
+            let startOfWeek = calendar.dateInterval(of: .weekOfYear, for: Date())?.start ?? Date()
+            let ridesThisWeekList = myRides.filter { $0.date >= startOfWeek } // <- Alterado
+            let weekdayNumbers = ridesThisWeekList.map { calendar.component(.weekday, from: $0.date) }
+            return Set(weekdayNumbers)
+        }
 
     var body: some View {
         NavigationStack {
@@ -183,24 +191,24 @@ struct GoalsView: View {
     
     private func calculateAchievements() -> [AchievementItem] {
         // 1. Primeira Volta (Desbloqueia se houver pelo menos 1 pedalada)
-        let firstRideUnlocked = !allRides.isEmpty
-        let firstRideDateStr = formattedDate(for: allRides.last?.date)
-        
-        // 2. Poupou 1kg de CO2 (Desbloqueia se totalCO2Kg >= 1.0)
-        let co2Unlocked = totalCO2Kg >= 1.0
-        
-        // 3. Ofensiva de Aço (Desbloqueia se pedalou 3 ou mais dias na semana)
-        let steelStreakUnlocked = activeDaysThisWeek.count >= 3
-        
-        // 4. Ritmo Urbano (Desbloqueia se houver uma corrida > 10 km)
-        let longRideUnlocked = allRides.contains { $0.distance >= 10.0 }
-        
-        // 5. Mestre Verde (Desbloqueia se a distância total acumulada geral >= 50 km)
-        let totalLifetimeDistance = allRides.reduce(0) { $0 + $1.distance }
-        let masterGreenUnlocked = totalLifetimeDistance >= 50.0
-        
-        // 6. Lenda LEV (Desbloqueia se total Lifetime Distance >= 200 km ou 10kg de CO2)
-        let levLegendUnlocked = totalLifetimeDistance >= 200.0 || totalCO2Kg >= 10.0
+        let firstRideUnlocked = !myRides.isEmpty // <- Alterado
+                let firstRideDateStr = formattedDate(for: myRides.last?.date) // <- Alterado
+                
+                // 2. Poupou 1kg de CO2 (Desbloqueia se totalCO2Kg >= 1.0)
+                let co2Unlocked = totalCO2Kg >= 1.0
+                
+                // 3. Ofensiva de Aço (Desbloqueia se pedalou 3 ou mais dias na semana)
+                let steelStreakUnlocked = activeDaysThisWeek.count >= 3
+                
+                // 4. Ritmo Urbano (Desbloqueia se houver uma corrida > 10 km)
+                let longRideUnlocked = myRides.contains { $0.distance >= 10.0 } // <- Alterado
+                
+                // 5. Mestre Verde (Desbloqueia se a distância total acumulada geral >= 50 km)
+                let totalLifetimeDistance = myRides.reduce(0) { $0 + $1.distance } // <- Alterado
+                let masterGreenUnlocked = totalLifetimeDistance >= 50.0
+                
+                // 6. Lenda LEV (Desbloqueia se total Lifetime Distance >= 200 km ou 10kg de CO2)
+                let levLegendUnlocked = totalLifetimeDistance >= 200.0 || totalCO2Kg >= 10.0
         
         return [
             AchievementItem(
@@ -345,5 +353,6 @@ struct AchievementBox: View {
     NavigationStack {
         GoalsView()
             .modelContainer(for: LocalRide.self, inMemory: true)
+            .environment(HomeViewModel()) // 🔥 A SOLUÇÃO ESTÁ AQUI! Injetamos o modelo para o Preview não crashar.
     }
 }

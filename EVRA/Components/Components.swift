@@ -30,10 +30,10 @@ struct OnboardingProgressBar: View {
         HStack(spacing: 8) {
             ForEach(0..<allSteps.count, id: \.self) { index in
                 Capsule()
-                    // Pinta de azul se já passámos ou estamos neste passo
+                // Pinta de azul se já passámos ou estamos neste passo
                     .fill(index <= currentIndex ? Color.blue : Color.white.opacity(0.4))
                     .frame(height: 4)
-                    // Truque de UX: Aumenta a área invisível para ser fácil de clicar
+                // Truque de UX: Aumenta a área invisível para ser fácil de clicar
                     .padding(.vertical, 10)
                     .contentShape(Rectangle())
                     .onTapGesture {
@@ -400,7 +400,7 @@ struct ProfilePreferencesSection: View {
                 }
             }
             
-         
+            
         }
         .padding(24)
         .background(Color(UIColor.systemBackground))
@@ -428,9 +428,9 @@ let availableCoupons: [PartnerCoupon] = [
 
 /// Cartão horizontal para os benefícios e lojas parceiras
 struct DashboardBenefitsLinkCard: View {
-
+    
     @Bindable var homeVM: HomeViewModel
-
+    
     var body: some View {
         
         let currentPoints = homeVM.currentUser?.spendableCarbonPoints ?? 0
@@ -470,7 +470,7 @@ struct DashboardBenefitsLinkCard: View {
             .cornerRadius(24)
             .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 5)
         }
-       
+        
     }
 }
 
@@ -502,5 +502,289 @@ struct ActiveTrackingBanner: View {
             RoundedRectangle(cornerRadius: 15)
                 .stroke(AppColors.levBlue, lineWidth: 2)
         )
+    }
+}
+
+// MARK: - Carrossel de Destaques (Dinâmico)
+struct HighlightsCarouselView: View {
+    var globalLeader: String
+    var globalPoints: Int
+    var topCity: String
+    var topVehicle: String
+    var localMembers: Int
+    var isLoading: Bool
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Destaques da Comunidade")
+                .font(.headline)
+                .fontWeight(.bold)
+                .padding(.horizontal, 24)
+            
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 16) {
+                    
+                    // Cartão 1: O Líder Supremo
+                    HighlightCard(
+                        icon: "trophy.fill",
+                        iconColor: .yellow,
+                        title: "1º Lugar Global",
+                        subtitle: "\(globalLeader) com \(globalPoints) pts!",
+                        isLoading: isLoading
+                    )
+                    
+                    // Cartão 2: A Cidade que mais pedala
+                    HighlightCard(
+                        icon: "flame.fill",
+                        iconColor: .orange,
+                        title: "Cidade em Alta",
+                        subtitle: "\(topCity) tem mais registros hoje.",
+                        isLoading: isLoading // Repassa para o cartão
+                    )
+                    
+                    // Cartão 3: O Modal Campeão
+                    HighlightCard(
+                        icon: topVehicle == "Carro" ? "car.fill" : "bicycle",
+                        iconColor: AppColors.levBlue,
+                        title: "Modal em Alta",
+                        subtitle: "\(topVehicle) lidera nas trocas.",
+                        isLoading: isLoading // Repassa para o cartão
+                    )
+                    
+                    // Cartão 4: A sua "Sala"
+                    HighlightCard(
+                        icon: "person.3.fill",
+                        iconColor: .green,
+                        title: "A Sua Região",
+                        subtitle: "\(localMembers) ciclistas a competir.",
+                        isLoading: isLoading // Repassa para o cartão
+                    )
+                }
+                .padding(.horizontal, 24)
+                .padding(.vertical, 8)
+            }
+        }
+    }
+}
+
+func getInitials(from name: String) -> String {
+    let words = name.split(separator: " ")
+    if words.count >= 2 {
+        let first = words.first?.first?.uppercased() ?? ""
+        let last = words.last?.first?.uppercased() ?? ""
+        return first + last
+    } else if let first = words.first?.prefix(2).uppercased() {
+        return String(first)
+    }
+    return "CL" // "CL" para Ciclista, caso falhe
+}
+struct FeedCard: View {
+    var name: String
+    var action: String
+    var distance: String
+    var time: String
+    
+    var body: some View {
+        HStack(spacing: 16) {
+            // 🔥 Substituição do ícone pela inicial do nome
+            Circle()
+                .fill(AppColors.levBlue.opacity(0.15))
+                .frame(width: 45, height: 45)
+                .overlay(
+                    Text(getInitials(from: name))
+                        .font(.system(size: 16, weight: .bold, design: .rounded))
+                        .foregroundColor(AppColors.levBlue)
+                )
+            
+            VStack(alignment: .leading, spacing: 4) {
+                HStack(spacing: 4) {
+                    Text(name).fontWeight(.bold).foregroundColor(.black)
+                    Text(action).foregroundColor(.black.opacity(0.8))
+                }
+                .font(.subheadline)
+                .lineLimit(2)
+                
+                HStack {
+                    Text(distance).fontWeight(.bold).foregroundColor(AppColors.levBlue)
+                    Text("• \(time)").foregroundColor(.gray)
+                }
+                .font(.caption)
+            }
+            Spacer()
+        }
+        .padding()
+        .background(Color.white)
+        .cornerRadius(16)
+    }
+}
+
+struct RankingRow: View {
+    var position: Int
+    var name: String
+    var points: String
+    var co2: String
+    
+    var body: some View {
+        HStack(spacing: 10) { // Adicionado spacing para respirar
+            Text("\(position)º")
+                .font(.headline)
+                .fontWeight(.bold)
+                .foregroundColor(.black.opacity(0.5))
+                .frame(width: 30, alignment: .leading)
+            
+            // 🔥 Avatar com a inicial adicionado ao Ranking!
+            Circle()
+                .fill(AppColors.levBlue.opacity(0.15))
+                .frame(width: 40, height: 40)
+                .overlay(
+                    Text(getInitials(from: name))
+                        .font(.system(size: 14, weight: .bold, design: .rounded))
+                        .foregroundColor(AppColors.levBlue)
+                )
+            
+            Text(name)
+                .font(.headline)
+                .foregroundColor(.black)
+            
+            Spacer()
+            
+            VStack(alignment: .trailing) {
+                Text(points)
+                    .font(.subheadline)
+                    .fontWeight(.bold)
+                    .foregroundColor(AppColors.levBlue)
+                Text("\(co2) CO2")
+                    .font(.caption2)
+                    .foregroundColor(.gray)
+            }
+        }
+        .padding()
+        .background(Color.white)
+        .cornerRadius(16)
+    }
+}
+
+
+struct EmptyStateView: View {
+    var message: String
+    
+    var body: some View {
+        VStack(spacing: 12) {
+            Image(systemName: "exclamationmark.triangle")
+                .font(.system(size: 40, weight: .light))
+                .foregroundColor(.gray)
+            
+            Text(message)
+                .font(.subheadline)
+                .multilineTextAlignment(.center)
+                .foregroundColor(.gray.opacity(0.8))
+        }
+        .padding(.top, 40)
+    }
+}
+
+
+
+
+struct PodiumBar: View {
+    var name: String
+    var points: String
+    var position: Int
+    var height: CGFloat
+    var color: Color
+    
+    var body: some View {
+        VStack(spacing: 8) {
+            Text(name)
+                .font(.caption)
+                .fontWeight(.bold)
+                .foregroundColor(.black)
+            
+            ZStack(alignment: .top) {
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(AppColors.levBlue)
+                    .frame(width: 80, height: height)
+                
+                Circle()
+                    .fill(color)
+                    .frame(width: 30, height: 30)
+                    .overlay(Text("\(position)").font(.caption).bold().foregroundColor(.white))
+                    .offset(y: -15)
+            }
+            
+            Text("\(points) pts")
+                .font(.caption2)
+                .foregroundColor(.black.opacity(0.7))
+        }
+    }
+}
+
+
+struct LiveFeedSection: View {
+    var feed: [GroupsViewModel.FeedActivity]
+    
+    var body: some View {
+        VStack(spacing: 16) {
+            if feed.isEmpty {
+                EmptyStateView(message: "Ainda sem atividades recentes na sua localização.\nSeja o primeiro a pedalar!")
+            } else {
+                ForEach(feed) { activity in
+                    FeedCard(
+                        name: activity.name,
+                        action: activity.action,
+                        distance: String(format: "%.1f km", activity.distance),
+                        time: timeAgoString(from: activity.timestamp)
+                    )
+                    .shadow(color: .black.opacity(0.05), radius: 5, x: 0, y: 2)
+                }
+            }
+        }
+        .padding(.horizontal, 24)
+        .padding(.top, 20)
+    }
+    
+    // Pequena função para transformar a data real em texto amigável (ex: "Há 5 min")
+    private func timeAgoString(from date: Date) -> String {
+        let minutes = Int(-date.timeIntervalSinceNow / 60)
+        if minutes < 1 { return "Agora mesmo" }
+        if minutes < 60 { return "Há \(minutes) min" }
+        let hours = minutes / 60
+        if hours < 24 { return "Há \(hours)h" }
+        return "Há mais de 1 dia"
+    }
+}
+
+struct HighlightCard: View {
+    var icon: String
+    var iconColor: Color
+    var title: String
+    var subtitle: String
+    var isLoading: Bool
+    
+    var body: some View {
+        HStack(spacing: 12) {
+            Circle()
+                .fill(iconColor.opacity(0.15))
+                .frame(width: 40, height: 40)
+                .overlay(Image(systemName: icon).foregroundColor(iconColor))
+            
+            VStack(alignment: .leading, spacing: 4) {
+                Text(title)
+                    .font(.subheadline)
+                    .fontWeight(.bold)
+                    .foregroundColor(.black)
+                
+                Text(subtitle)
+                    .font(.caption)
+                    .foregroundColor(.gray)
+                    .lineLimit(2)
+            }
+            .redacted(reason: isLoading ? .placeholder : [])
+        }
+        .frame(width: 220, alignment: .leading)
+        .padding(16)
+        .background(Color.white)
+        .cornerRadius(16)
+        .shadow(color: .black.opacity(0.05), radius: 5, x: 0, y: 2)
     }
 }

@@ -80,6 +80,8 @@ struct ProfileView: View {
                             onSave: { message, shouldAlert in
                                 do {
                                     try modelContext.save()
+                                    
+                                    UserDefaults.standard.set(user.substitutedVehicle?.rawValue, forKey: "user_substituted_vehicle")
                                     // Sincroniza com a nuvem também as preferências
                                     Task { try? await CloudKitService().saveUser(user) }
                                     

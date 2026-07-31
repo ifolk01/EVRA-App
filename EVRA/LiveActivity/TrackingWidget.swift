@@ -39,16 +39,19 @@ struct TrackingLockScreenView: View {
                 
                 // DESTAQUE: CO2
                 HStack(alignment: .firstTextBaseline, spacing: 4) {
-                    Text(String(format: "%.0f", state.co2Avoided))
-                        .font(.system(size: 56, weight: .black, design: .rounded))
-                        .foregroundColor(.black)
-                        .minimumScaleFactor(0.5)
-                        .lineLimit(1)
-                    
-                    Text("g CO2")
-                        .font(.subheadline)
-                        .foregroundColor(.gray)
-                }
+                                    let co2Formatted = formatWidgetCO2(state.co2Avoided)
+                                    
+                                    Text(co2Formatted.value)
+                                        .font(.system(size: 50, weight: .black, design: .rounded)) // Ajustado levemente para 50 para dar margem de segurança
+                                        .foregroundColor(.black)
+                                        .minimumScaleFactor(0.6)
+                                        .lineLimit(1)
+                                    
+                                    Text(co2Formatted.unit)
+                                        .font(.subheadline)
+                                        .fontWeight(.bold)
+                                        .foregroundColor(.gray)
+                                }
                 
                 Spacer()
                 
@@ -128,6 +131,15 @@ struct TrackingLockScreenView: View {
         
         return "\(dayString) pedalada \(period)"
     }
+    
+    private func formatWidgetCO2(_ grams: Double) -> (value: String, unit: String) {
+            if grams >= 1000.0 {
+                let kg = grams / 1000.0
+                return (String(format: "%.1f", kg), "kg CO2")
+            } else {
+                return (String(format: "%.0f", grams), "g CO2")
+            }
+        }
 }
 
 

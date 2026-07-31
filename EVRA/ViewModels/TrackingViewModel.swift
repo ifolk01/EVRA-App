@@ -389,7 +389,8 @@ class TrackingViewModel {
                 let currentMonthYear = dateFormatter.string(from: Date())
                 
                 
-                let userVehicle = UserDefaults.standard.string(forKey: "user_substituted_vehicle") ?? "Ciclista"
+                // Puxa o veículo real do utilizador. Se por acaso falhar, assume "Carro" como padrão oficial.
+                let userVehicle = activeUser?.substitutedVehicle?.rawValue ?? SubstitutedVehicle.car.rawValue
                 let groupName = "\(userVehicle) - \(city) - \(currentMonthYear)"
                 let userName = activeUser?.name ?? "Ciclista Desconhecido"
                 let userAppleID = UserDefaults.standard.string(forKey: "apple_user_id") ?? "usuario_anonimo"
