@@ -393,7 +393,7 @@ class TrackingViewModel {
                 let userVehicle = activeUser?.substitutedVehicle?.rawValue ?? SubstitutedVehicle.car.rawValue
                 let groupName = "\(userVehicle) - \(city) - \(currentMonthYear)"
                 let userName = activeUser?.name ?? "Ciclista Desconhecido"
-                let userAppleID = UserDefaults.standard.string(forKey: "apple_user_id") ?? "usuario_anonimo"
+                let userAppleID = activeUser?.appleUserIdentifier ?? "usuario_anonimo"
                 
                 // ==========================================
                 // PARTE A: ATUALIZAR O RANKING (1 Registo por User)

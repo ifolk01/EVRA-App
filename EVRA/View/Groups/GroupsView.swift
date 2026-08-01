@@ -80,8 +80,13 @@ struct GroupsView: View {
             }
             .navigationBarHidden(true)
             .onAppear {
-                    
+                            // 1. Verifica se trocou de veículo
                             viewModel.checkVehiclePreference()
+                            
+                            // 2. Força a atualização dos dados do Ranking e Feed toda a vez que abrir a aba!
+                            Task {
+                                await viewModel.refreshData()
+                            }
                         }
         }
     }
