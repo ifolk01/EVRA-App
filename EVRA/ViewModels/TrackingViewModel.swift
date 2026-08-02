@@ -356,12 +356,13 @@ class TrackingViewModel {
         }
     
  
-    // MARK: - CLOUDKIT PUBLIC SYNC (Leaderboard & Feed Separados)
+
+    // MARK: - CLOUDKIT PUBLIC SYNC (Leaderboard Global & Offline Ready)
         private func syncWithPublicLeaderboard(distance: Double, co2: Double, points: Int) {
             Task {
                 let publicDB = CKContainer.default().publicCloudDatabase
                 
-                // 1. Obter a cidade
+                // 🔥 1. TRAZENDO DE VOLTA A DESCOBERTA DA CIDADE E VEÍCULO
                 var city = "Local Desconhecido"
                 if let location = trackingService.lastLocation {
                     do {
@@ -384,24 +385,32 @@ class TrackingViewModel {
                     }
                 }
                 
+                let userVehicle = activeUser?.substitutedVehicle?.rawValue ?? "Carro"
+                
+                // 2. A MÁGICA OFFLINE: Pega o que estava pendente sem internet
+                let pendingDistance = UserDefaults.standard.double(forKey: "pending_sync_distance")
+                let pendingCO2 = UserDefaults.standard.double(forKey: "pending_sync_co2")
+                let pendingPoints = UserDefaults.standard.integer(forKey: "pending_sync_points")
+                
+                // 3. Soma a pedalada de agora com o que estava guardado!
+                let totalDistanceToSync = distance + pendingDistance
+                let totalCO2ToSync = co2 + pendingCO2
+                let totalPointsToSync = points + pendingPoints
+                
                 let dateFormatter = DateFormatter()
                 dateFormatter.dateFormat = "MM-yyyy"
                 let currentMonthYear = dateFormatter.string(from: Date())
                 
-                
-                // Puxa o veículo real do utilizador. Se por acaso falhar, assume "Carro" como padrão oficial.
-                let userVehicle = activeUser?.substitutedVehicle?.rawValue ?? SubstitutedVehicle.car.rawValue
-                let groupName = "\(userVehicle) - \(city) - \(currentMonthYear)"
+                // NOME GLOBAL: Adeus GPS! Todos os utilizadores competem na mesma sala!
+                let groupName = "Global - \(currentMonthYear)"
                 let userName = activeUser?.name ?? "Ciclista Desconhecido"
                 let userAppleID = activeUser?.appleUserIdentifier ?? "usuario_anonimo"
                 
-                // ==========================================
-                // PARTE A: ATUALIZAR O RANKING (1 Registo por User)
-                // ==========================================
                 let predicate = NSPredicate(format: "userAppleID == %@ AND groupName == %@", userAppleID, groupName)
                 let query = CKQuery(recordType: "PublicLeaderboard", predicate: predicate)
                 
                 do {
+                    // TENTA ATUALIZAR O RANKING
                     let (matchResults, _) = try await publicDB.records(matching: query)
                     
                     if let firstMatch = matchResults.first, case .success(let existingRecord) = firstMatch.1 {
@@ -409,53 +418,50 @@ class TrackingViewModel {
                         let currentCO2 = existingRecord["totalCO2"] as? Double ?? 0.0
                         let currentPoints = existingRecord["totalCarbonPoints"] as? Int ?? 0
                         
-                        existingRecord["totalDistance"] = currentDistance + distance
-                        existingRecord["totalCO2"] = currentCO2 + co2
-                        existingRecord["totalCarbonPoints"] = currentPoints + points
+                        existingRecord["totalDistance"] = currentDistance + totalDistanceToSync
+                        existingRecord["totalCO2"] = currentCO2 + totalCO2ToSync
+                        existingRecord["totalCarbonPoints"] = currentPoints + totalPointsToSync
                         existingRecord["userName"] = userName
                         
                         try await publicDB.save(existingRecord)
-                        print("☁️ 🏆 CloudKit: Ranking acumulado atualizado com sucesso!")
                     } else {
                         let newRecord = CKRecord(recordType: "PublicLeaderboard")
                         newRecord["userAppleID"] = userAppleID
                         newRecord["userName"] = userName
                         newRecord["groupName"] = groupName
-                        newRecord["totalDistance"] = distance
-                        newRecord["totalCO2"] = co2
-                        newRecord["totalCarbonPoints"] = points
-                        
+                        newRecord["totalDistance"] = totalDistanceToSync
+                        newRecord["totalCO2"] = totalCO2ToSync
+                        newRecord["totalCarbonPoints"] = totalPointsToSync
                         try await publicDB.save(newRecord)
-                        print("☁️ 🏆 CloudKit: Novo perfil criado no Ranking!")
                     }
-                } catch {
-                    print("☁️ Criando tabela PublicLeaderboard pela primeira vez...")
-                    let newRecord = CKRecord(recordType: "PublicLeaderboard")
-                    newRecord["userAppleID"] = userAppleID
-                    newRecord["userName"] = userName
-                    newRecord["groupName"] = groupName
-                    newRecord["totalDistance"] = distance
-                    newRecord["totalCO2"] = co2
-                    newRecord["totalCarbonPoints"] = points
-                    try? await publicDB.save(newRecord)
-                }
-                
-                // ==========================================
-                // PARTE B: ADICIONAR AO FEED AO VIVO (Histórico de Atividades)
-                // ==========================================
-                let feedRecord = CKRecord(recordType: "PublicFeedActivity")
-                feedRecord["userAppleID"] = userAppleID
-                feedRecord["userName"] = userName
-                feedRecord["groupName"] = groupName
-                feedRecord["distance"] = distance
-                feedRecord["co2Avoided"] = co2
-                feedRecord["date"] = Date()
-                
-                do {
+                    
+                    // TENTA ADICIONAR AO FEED AO VIVO
+                    let feedRecord = CKRecord(recordType: "PublicFeedActivity")
+                    feedRecord["userAppleID"] = userAppleID
+                    feedRecord["userName"] = userName
+                    feedRecord["groupName"] = groupName
+                    feedRecord["distance"] = totalDistanceToSync
+                    feedRecord["co2Avoided"] = totalCO2ToSync
+                    feedRecord["date"] = Date()
+                    
+                    // GRAVANDO A CIDADE E VEÍCULO DIRETAMENTE
+                    feedRecord["cityName"] = city
+                    feedRecord["vehicleType"] = userVehicle
+                    
                     try await publicDB.save(feedRecord)
-                    print("☁️ 📰 CloudKit: Nova atividade adicionada ao Feed ao Vivo!")
+                    
+                    // ✅ SUCESSO! TEM INTERNET! Limpa a "bolsa" offline!
+                    UserDefaults.standard.set(0.0, forKey: "pending_sync_distance")
+                    UserDefaults.standard.set(0.0, forKey: "pending_sync_co2")
+                    UserDefaults.standard.set(0, forKey: "pending_sync_points")
+                    print("☁️ 🏆 Sincronização Global concluída com sucesso!")
+                    
                 } catch {
-                    print("☁️ ❌ Erro ao salvar atividade no feed: \(error.localizedDescription)")
+                    // ❌ FALHA! ESTÁ SEM INTERNET! Guarda tudo na "bolsa" para a próxima.
+                    print("⚠️ Sem internet. Os pontos foram guardados localmente para a próxima sincronização.")
+                    UserDefaults.standard.set(totalDistanceToSync, forKey: "pending_sync_distance")
+                    UserDefaults.standard.set(totalCO2ToSync, forKey: "pending_sync_co2")
+                    UserDefaults.standard.set(totalPointsToSync, forKey: "pending_sync_points")
                 }
             }
         }
