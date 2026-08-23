@@ -5,6 +5,7 @@ internal import HealthKit
 struct HomeDashboardView: View {
         @Environment(TrackingViewModel.self) private var trackingVM
         @Environment(\.modelContext) private var modelContext
+        @Environment(\.colorScheme) var colorScheme
     
     var homeVM: HomeViewModel
 
@@ -91,13 +92,16 @@ struct HomeDashboardView: View {
                 }
                 .padding()
             }
-            .background(AppColors.levGreenBg.edgesIgnoringSafeArea(.all))
+            .background(
+                (colorScheme == .dark ? Color("LevGreenDark") : AppColors.levGreenBg)
+                                .edgesIgnoringSafeArea(.all)
+                        )
             .task {
                 await syncHealthKitData()
             }
         }
         .onAppear {
-                    // 🔥 Entrega as chaves do banco de dados para a ViewModel usar mais tarde
+                   
                     trackingVM.activeContext = modelContext
                     trackingVM.activeUser = homeVM.currentUser
             
@@ -109,111 +113,152 @@ struct HomeDashboardView: View {
     // (Mantemos apenas o que é estritamente específico desta view e não é reutilizável)
     
     private var headerSection: some View {
-        HStack {
-            VStack(alignment: .leading, spacing: 4) {
-                Text("Olá,")
-                    .font(.subheadline)
-                    .foregroundColor(.black.opacity(0.7))
-                
-                Text(homeVM.currentUser?.name ?? "Ciclista")
-                    .font(.title2)
-                    .fontWeight(.bold)
-                    .foregroundColor(.black)
+            HStack {
+                VStack(alignment: .leading, spacing: 0) {
+                    Text("Olá,")
+                        .font(.title3)
+                        .fontWeight(.medium)
+                        .foregroundColor((colorScheme == .dark ? Color.white : Color.black).opacity(0.6))
+                    
+                    Text(homeVM.currentUser?.name ?? "Ciclista")
+                        .font(.system(size: 34, weight: .heavy, design: .rounded))
+                        .foregroundColor(colorScheme == .dark ? .white : .black)
+                }
+                Spacer()
             }
-            Spacer()
-   
+            .padding(.horizontal, 4)
+            .padding(.top, 10)
         }
-    }
     
     private var pointsCard: some View {
-        let totalPoints = homeVM.currentUser?.totalCarbonPoints ?? 0
-        let pointsPerLevel = 1500
-        let maxLevel = 10
-        let prestigeCount = totalPoints / (pointsPerLevel * maxLevel)
-        let pointsInCurrentCycle = totalPoints % (pointsPerLevel * maxLevel)
-        let currentLevel = (pointsInCurrentCycle / pointsPerLevel) + 1
-        let pointsInCurrentLevel = pointsInCurrentCycle % pointsPerLevel
-        let progressRatio = Double(pointsInCurrentLevel) / Double(pointsPerLevel)
-        let percentageText = "\(Int(progressRatio * 100))%"
-        
-        return VStack(alignment: .leading, spacing: 15) {
-            HStack {
-                Image(systemName: "bolt.fill")
-                    .foregroundColor(AppColors.levBlue)
-                Text("Carbon Points")
-                    .font(.headline)
-                    .foregroundColor(.black)
-                Spacer()
+            let totalPoints = homeVM.currentUser?.totalCarbonPoints ?? 0
+            let pointsPerLevel = 1500
+            let maxLevel = 10
+            let prestigeCount = totalPoints / (pointsPerLevel * maxLevel)
+            let pointsInCurrentCycle = totalPoints % (pointsPerLevel * maxLevel)
+            let currentLevel = (pointsInCurrentCycle / pointsPerLevel) + 1
+            let pointsInCurrentLevel = pointsInCurrentCycle % pointsPerLevel
+            let progressRatio = Double(pointsInCurrentLevel) / Double(pointsPerLevel)
+            let percentageText = "\(Int(progressRatio * 100))%"
+            
+            // Cores Dinâmicas Baseadas no Tema
+            let isDark = colorScheme == .dark
+            let neonGreen = Color(red: 0.82, green: 1.0, blue: 0.2)
+            let deepDark = Color(red: 0.08, green: 0.08, blue: 0.1)
+            
+            let primaryText = isDark ? Color.white : Color.black
+            let accentColor = isDark ? neonGreen : AppColors.levBlue
+            let secondaryText = isDark ? Color.white.opacity(0.6) : Color.gray
+            
+            return VStack(alignment: .leading, spacing: 24) {
                 
-                HStack(spacing: 4) {
-                    if prestigeCount > 0 {
-                        Image(systemName: "star.fill")
-                            .font(.caption2)
-                            .foregroundColor(.yellow)
-                        Text("\(prestigeCount)")
+                // Topo do Cartão
+                HStack(alignment: .center) {
+                    HStack(spacing: 8) {
+                        ZStack {
+                            Circle()
+                                .fill(accentColor.opacity(0.2))
+                                .frame(width: 36, height: 36)
+                            Image(systemName: "bolt.fill")
+                                .font(.system(size: 18, weight: .bold))
+                                .foregroundColor(accentColor)
+                        }
+                        Text("Carbon Points")
+                            .font(.headline)
+                            .fontWeight(.heavy)
+                            .foregroundColor(primaryText)
+                    }
+                    
+                    Spacer()
+                    
+                    // Badge de Nível Adaptável
+                    HStack(spacing: 4) {
+                        if prestigeCount > 0 {
+                            Image(systemName: "star.fill")
+                                .font(.system(size: 10, weight: .black))
+                                .foregroundColor(isDark ? .black : .white)
+                            Text("\(prestigeCount)")
+                                .font(.system(size: 12, weight: .black, design: .rounded))
+                                .foregroundColor(isDark ? .black : .white)
+                        }
+                        Text("Nível \(currentLevel)")
+                            .font(.system(size: 12, weight: .black, design: .rounded))
+                            .foregroundColor(isDark ? .black : .white)
+                    }
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 8)
+                    .background(accentColor)
+                    .clipShape(Capsule())
+                }
+                
+                // O Grande Número
+                HStack(alignment: .firstTextBaseline, spacing: 6) {
+                    Text("\(totalPoints)")
+                        .font(.system(size: 64, weight: .black, design: .rounded))
+                        .foregroundColor(primaryText)
+                    Text("XP")
+                        .font(.title3)
+                        .fontWeight(.bold)
+                        .foregroundColor(accentColor)
+                }
+                
+                // Barra de Progresso
+                VStack(spacing: 12) {
+                    HStack {
+                        Text("Faltam \(pointsPerLevel - pointsInCurrentLevel) pts")
                             .font(.caption)
                             .fontWeight(.bold)
-                            .foregroundColor(.white)
+                            .foregroundColor(secondaryText)
+                        Spacer()
+                        Text(percentageText)
+                            .font(.caption)
+                            .fontWeight(.black)
+                            .foregroundColor(accentColor)
                     }
-                    Text("Nível \(currentLevel)")
-                        .font(.caption)
-                        .fontWeight(.bold)
-                        .foregroundColor(.white)
-                }
-                .padding(.horizontal, 10)
-                .padding(.vertical, 5)
-                .background(AppColors.levBlue)
-                .clipShape(Capsule())
-            }
-            
-            HStack(alignment: .firstTextBaseline, spacing: 4) {
-                Text("\(totalPoints)")
-                    .font(.system(size: 40, weight: .bold))
-                    .foregroundColor(.black)
-                Text("pts totais")
-                    .font(.title3)
-                    .foregroundColor(.gray)
-            }
-            
-            VStack(spacing: 8) {
-                HStack {
-                    Text("Para o Nível \(currentLevel == 10 ? "Máximo!" : "\(currentLevel + 1)"): \(pointsPerLevel - pointsInCurrentLevel) pts")
-                        .font(.caption)
-                        .foregroundColor(.gray)
-                    Spacer()
-                    Text(percentageText)
-                        .font(.caption)
-                        .fontWeight(.bold)
-                        .foregroundColor(AppColors.levBlue)
-                }
-                
-                GeometryReader { geometry in
-                    ZStack(alignment: .leading) {
-                        Capsule()
-                            .frame(width: geometry.size.width, height: 6)
-                            .foregroundColor(Color.gray.opacity(0.3))
-                        
-                        Capsule()
-                            .frame(width: geometry.size.width * CGFloat(progressRatio), height: 6)
-                            .foregroundColor(AppColors.levBlue)
-                            .animation(.spring(response: 0.5, dampingFraction: 0.7), value: progressRatio)
+                    
+                    GeometryReader { geometry in
+                        ZStack(alignment: .leading) {
+                            Capsule()
+                                .frame(width: geometry.size.width, height: 10)
+                                .foregroundColor(isDark ? Color.white.opacity(0.1) : Color(UIColor.systemGray5))
+                            
+                            Capsule()
+                                .frame(width: geometry.size.width * CGFloat(progressRatio), height: 10)
+                                .foregroundColor(accentColor)
+                                .shadow(color: isDark ? accentColor.opacity(0.5) : Color.clear, radius: 8, x: 0, y: 0)
+                        }
                     }
+                    .frame(height: 10)
+                    .animation(.spring(response: 0.6, dampingFraction: 0.7), value: progressRatio)
                 }
-                .frame(height: 6)
             }
+            .padding(28)
+            .background(
+                // Fundo mutante: Gradiente tecnológico no Dark, Branco puro no Light
+                isDark
+                ? AnyShapeStyle(LinearGradient(gradient: Gradient(colors: [deepDark, Color.black]), startPoint: .topLeading, endPoint: .bottomTrailing))
+                : AnyShapeStyle(Color.white)
+            )
+            .clipShape(RoundedRectangle(cornerRadius: 32, style: .continuous))
+            .shadow(color: Color.black.opacity(isDark ? 0.3 : 0.05), radius: 20, x: 0, y: isDark ? 15 : 8)
         }
-        .padding()
-        .background(Color(UIColor.systemBackground))
-        .cornerRadius(20)
-    }
     
     private var benefitsSection: some View {
-        VStack(alignment: .leading, spacing: 15) {
+        let isDark = colorScheme == .dark
+        let neonGreen = Color(red: 0.82, green: 1.0, blue: 0.2)
+        let deepDark = Color(red: 0.08, green: 0.08, blue: 0.1)
+        
+        let primaryText = isDark ? Color.white : Color.black
+        let accentColor = isDark ? neonGreen : AppColors.levBlue
+        let secondaryText = isDark ? Color.white.opacity(0.6) : Color.gray
+        
+        return VStack(alignment: .leading, spacing: 15) {
             HStack {
                 Text("Benefícios")
                     .font(.title3)
                     .fontWeight(.bold)
-                    .foregroundColor(.black)
+                    .foregroundColor(primaryText)
+                
                 Spacer()
 //                Text("Ver todos >")
 //                    .font(.caption)
@@ -298,6 +343,9 @@ struct HomeDashboardView: View {
 }
     
 
-#Preview {
+#Preview("Dark Mode") {
     HomeDashboardView(homeVM: HomeViewModel())
+        .modelContainer(for: LocalRide.self, inMemory: true)
+        .environment(TrackingViewModel())
+        .preferredColorScheme(.dark)
 }

@@ -140,6 +140,7 @@ struct OnboardingInfoRow: View {
 }
 
 struct DashboardStatCard: View {
+    @Environment(\.colorScheme) var colorScheme
     var title: String
     var value: String
     var unit: String
@@ -147,37 +148,50 @@ struct DashboardStatCard: View {
     var iconColor: Color
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Image(systemName: icon)
-                .font(.title2)
-                .foregroundColor(iconColor)
-                .padding(10)
-                .background(iconColor.opacity(0.15))
-                .clipShape(Circle())
+        let isDarkTheme = colorScheme == .dark
+        let neonGreen = Color(red: 0.82, green: 1.0, blue: 0.2)
+        let deepDark = Color(red: 0.08, green: 0.08, blue: 0.1)
+        
+        let cardBg = isDarkTheme ? deepDark : .white
+        let primaryText = isDarkTheme ? Color.white : .black
+        let secondaryText = isDarkTheme ? Color.white.opacity(0.6) : .gray
+        let activeIconColor = isDarkTheme ? neonGreen : iconColor
+        
+        VStack(alignment: .leading, spacing: 14) {
+            ZStack {
+                Circle()
+                    .fill(activeIconColor.opacity(0.15))
+                    .frame(width: 44, height: 44)
+                Image(systemName: icon)
+                    .foregroundColor(activeIconColor)
+                    .font(.system(size: 20, weight: .bold))
+            }
             
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: 2) {
                 Text(title)
                     .font(.caption)
-                    .foregroundColor(.gray)
+                    .fontWeight(.semibold)
+                    .foregroundColor(secondaryText)
                 
                 HStack(alignment: .firstTextBaseline, spacing: 2) {
                     Text(value)
-                        .font(.title2)
-                        .fontWeight(.bold)
-                        .foregroundColor(.black)
+                        .font(.system(size: 32, weight: .heavy, design: .rounded))
+                        .foregroundColor(primaryText)
+                        .minimumScaleFactor(0.5)
+                        .lineLimit(1)
                     
-                    if !unit.isEmpty {
-                        Text(unit)
-                            .font(.caption)
-                            .foregroundColor(.gray)
-                    }
+                    Text(unit)
+                        .font(.caption)
+                        .fontWeight(.bold)
+                        .foregroundColor(secondaryText)
                 }
             }
         }
-        .padding()
+        .padding(20)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color(UIColor.systemBackground))
-        .cornerRadius(20)
+        .background(cardBg)
+        .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+        .shadow(color: Color.black.opacity(isDarkTheme ? 0.3 : 0.04), radius: 12, x: 0, y: isDarkTheme ? 8 : 6)
     }
 }
 
@@ -228,36 +242,51 @@ struct HoldToFinishButton: View {
 
 /// Cartão para exibir o progresso de metas
 struct DashboardGoalCard: View {
+    @Environment(\.colorScheme) var colorScheme
     var title: String
     var subtitle: String
     var percentageText: String
     
     var body: some View {
-        HStack {
-            Image(systemName: "target")
-                .font(.title)
-                .foregroundColor(AppColors.levGreenBg)
-                .padding(12)
-                .background(Color.black.opacity(0.05))
-                .clipShape(Circle())
+        let isDarkTheme = colorScheme == .dark
+        let neonGreen = Color(red: 0.82, green: 1.0, blue: 0.2)
+        let deepDark = Color(red: 0.08, green: 0.08, blue: 0.1)
+        
+        let cardBg = isDarkTheme ? deepDark : .white
+        let primaryText = isDarkTheme ? Color.white : .black
+        let secondaryText = isDarkTheme ? Color.white.opacity(0.6) : .gray
+        let accentColor = isDarkTheme ? neonGreen : AppColors.levBlue
+        
+        HStack(spacing: 16) {
+            ZStack {
+                Circle()
+                    .fill(accentColor.opacity(0.15))
+                    .frame(width: 50, height: 50)
+                Image(systemName: "target")
+                    .foregroundColor(accentColor)
+                    .font(.system(size: 24, weight: .bold))
+            }
             
             VStack(alignment: .leading, spacing: 4) {
                 Text(title)
                     .font(.headline)
-                    .foregroundColor(.black)
+                    .fontWeight(.bold)
+                    .foregroundColor(primaryText)
                 Text(subtitle)
-                    .font(.caption)
-                    .foregroundColor(.gray)
+                    .font(.subheadline)
+                    .foregroundColor(secondaryText)
             }
             Spacer()
+            
             Text(percentageText)
-                .font(.title2)
-                .fontWeight(.bold)
-                .foregroundColor(AppColors.levBlue)
+                .font(.system(size: 24, weight: .heavy, design: .rounded))
+                .foregroundColor(accentColor)
         }
-        .padding()
-        .background(Color(UIColor.systemBackground))
-        .cornerRadius(20)
+        .padding(20)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(cardBg)
+        .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+        .shadow(color: Color.black.opacity(isDarkTheme ? 0.3 : 0.04), radius: 12, x: 0, y: isDarkTheme ? 8 : 6)
     }
 }
 
@@ -428,49 +457,55 @@ let availableCoupons: [PartnerCoupon] = [
 
 /// Cartão horizontal para os benefícios e lojas parceiras
 struct DashboardBenefitsLinkCard: View {
-    
-    @Bindable var homeVM: HomeViewModel
+    @Environment(\.colorScheme) var colorScheme
+    var homeVM: HomeViewModel
     
     var body: some View {
+        let isDarkTheme = colorScheme == .dark
+        let neonGreen = Color(red: 0.82, green: 1.0, blue: 0.2)
+        let deepDark = Color(red: 0.08, green: 0.08, blue: 0.1)
         
-        let currentPoints = homeVM.currentUser?.spendableCarbonPoints ?? 0
-        NavigationLink(destination: BenefitsGalleryView(homeVM: homeVM)){
+        let cardBg = isDarkTheme ? deepDark : .white
+        let primaryText = isDarkTheme ? Color.white : .black
+        let secondaryText = isDarkTheme ? Color.white.opacity(0.6) : .gray
+        let accentColor = isDarkTheme ? neonGreen : Color.purple
+        
+        NavigationLink(destination: BenefitsGalleryView(homeVM: homeVM)) {
             HStack(spacing: 16) {
-                // Ícone de Destaque
                 ZStack {
                     Circle()
-                        .fill(AppColors.levBlue.opacity(0.15))
-                        .frame(width: 60, height: 60)
-                    
+                        .fill(accentColor.opacity(0.15))
+                        .frame(width: 50, height: 50)
                     Image(systemName: "gift.fill")
-                        .font(.system(size: 24))
-                        .foregroundColor(AppColors.levBlue)
+                        .foregroundColor(accentColor)
+                        .font(.system(size: 24, weight: .bold))
                 }
                 
-                // Textos
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Trocar Pontos")
                         .font(.headline)
-                        .foregroundColor(.black)
+                        .fontWeight(.bold)
+                        .foregroundColor(primaryText)
                     
-                    Text("Você tem \(currentPoints) pts disponíveis")
+                    Text("Você tem \(homeVM.currentUser?.spendableCarbonPoints ?? 0) pts disponíveis")
                         .font(.subheadline)
-                        .foregroundColor(.gray)
+                        .foregroundColor(secondaryText)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
                 }
-                
                 Spacer()
                 
-                // Seta indicativa
                 Image(systemName: "chevron.right")
-                    .foregroundColor(AppColors.levBlue)
-                    .font(.system(size: 14, weight: .bold))
+                    .foregroundColor(secondaryText)
+                    .font(.system(size: 16, weight: .bold))
             }
             .padding(20)
-            .background(Color(UIColor.systemBackground))
-            .cornerRadius(24)
-            .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 5)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(cardBg)
+            .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+            .shadow(color: Color.black.opacity(isDarkTheme ? 0.3 : 0.04), radius: 12, x: 0, y: isDarkTheme ? 8 : 6)
         }
-        
+        .buttonStyle(PlainButtonStyle())
     }
 }
 
