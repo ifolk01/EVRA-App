@@ -33,7 +33,6 @@ struct VelosApp: App {
             WindowGroup {
                 // Removemos o "if isLoggedIn" e deixamos a RootView assumir o controle!
                 RootView()
-                    .preferredColorScheme(.light)
                     .environment(router)
                     .environment(homeVM)
                     .environment(onboardingVM)

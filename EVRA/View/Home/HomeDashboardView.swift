@@ -343,9 +343,9 @@ struct HomeDashboardView: View {
 }
     
 
-#Preview("Dark Mode") {
+#Preview {
     HomeDashboardView(homeVM: HomeViewModel())
         .modelContainer(for: LocalRide.self, inMemory: true)
         .environment(TrackingViewModel())
-        .preferredColorScheme(.dark)
+        
 }
