@@ -167,7 +167,7 @@ struct TrackingWidget: Widget {
         ActivityConfiguration(for: TrackingAttributes.self) { context in
             // ECRÃ DE BLOQUEIO
             TrackingLockScreenView(state: context.state, startDate: context.attributes.startTime)
-            
+                .widgetURL(URL(string: "velos://tracking"))
         } dynamicIsland: { context in
             // ILHA DINÂMICA (Sempre escura, logo as fontes têm de ser claras/vibrantes)
             DynamicIsland {
@@ -226,6 +226,7 @@ struct TrackingWidget: Widget {
                 Image(systemName: "leaf.fill").foregroundColor(neonGreen)
             }
             .keylineTint(neonGreen)
+            .widgetURL(URL(string: "velos://tracking"))
         }
     }
 }

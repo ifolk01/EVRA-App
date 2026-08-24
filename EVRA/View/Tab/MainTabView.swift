@@ -16,7 +16,7 @@ struct MainTabView: View {
     private let locationManager = CLLocationManager()
     @Query private var savedUsers: [User]
     @Environment(\.colorScheme) var colorScheme
-    
+    @Environment(AppRouter.self) private var router
     var body: some View {
         let isDark = colorScheme == .dark
                 let neonGreen = Color(red: 0.82, green: 1.0, blue: 0.2)
@@ -56,6 +56,11 @@ struct MainTabView: View {
                     Label("Perfil", systemImage: "person.crop.circle")
                 }
         }
+        .fullScreenCover(
+                    isPresented: Bindable(router).showActiveTracking
+                ) {
+                    TrackingRecordView(homeVM: homeVM)
+                }
         .tint(activeTint) // A cor do ícone quando a aba está selecionada
         .onAppear {
                     // 🔥 Injeta o utilizador instantaneamente assim que a TabBar carrega

@@ -50,46 +50,52 @@ class TrackingViewModel {
     let ebikeEmissionFactor: Double = 15.0 // Emissão base da E-bike
     
     @MainActor
-        init() {
-            // 🔥 REMOVIDO o bloco que matava as atividades acidentalmente ao carregar views
-            
-            // 1. LIGAÇÃO DO SERVIÇO DE TRACKING
-            trackingService.onDistanceUpdate = { [weak self] newDistance in
-                self?.updateRideProgress(newDistance: newDistance)
+    init() {
+        // 🔥 REMOVIDO o bloco que matava as atividades acidentalmente ao carregar views
+        
+        // 1. LIGAÇÃO DO SERVIÇO DE TRACKING
+        trackingService.onDistanceUpdate = { [weak self] newDistance in
+            self?.updateRideProgress(newDistance: newDistance)
+        }
+        
+        self.restoreOngoingRide()
+        
+        // 2. OUVINTES DE NOTIFICAÇÃO
+        NotificationCenter.default.addObserver(
+            forName: Notification.Name("ToggleRideStatus"),
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            guard let self else { return }
+            switch self.currentState {
+            case .tracking: self.pauseRide()
+            case .paused:   self.resumeRide()
+            case .idle:     break
             }
-            
-            // 2. OUVINTES DE NOTIFICAÇÃO
-            NotificationCenter.default.addObserver(
-                forName: Notification.Name("ToggleRideStatus"),
-                object: nil,
-                queue: .main
-            ) { [weak self] _ in
-                guard let self else { return }
-                switch self.currentState {
-                case .tracking: self.pauseRide()
-                case .paused:   self.resumeRide()
-                case .idle:     break
-                }
+        }
+        
+        NotificationCenter.default.addObserver(
+            forName: Notification.Name("FinishRideSignal"),
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor in
+                let generator = UINotificationFeedbackGenerator()
+                generator.notificationOccurred(.success)
+                await self?.finishRide(localContext: self?.activeContext, currentUser: self?.activeUser)
             }
+        }
+        
+        NotificationCenter.default.addObserver(
+            forName: UIApplication.willTerminateNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            guard let self = self else { return }
             
-            NotificationCenter.default.addObserver(
-                forName: Notification.Name("FinishRideSignal"),
-                object: nil,
-                queue: .main
-            ) { [weak self] _ in
-                Task { @MainActor in
-                    let generator = UINotificationFeedbackGenerator()
-                    generator.notificationOccurred(.success)
-                    await self?.finishRide(localContext: self?.activeContext, currentUser: self?.activeUser)
-                }
-            }
-            
-            NotificationCenter.default.addObserver(
-                forName: UIApplication.willTerminateNotification,
-                object: nil,
-                queue: .main
-            ) { _ in
-                print("🚨 App a ser encerrado! Abatendo Live Activity...")
+            // 🔥 2. Proteção: Se estiver PAUSADO, deixamos a Live Activity viver para ser recuperada!
+            if self.currentState != .paused {
+                print("🚨 App a ser encerrado (Não Pausado)! Abatendo Live Activity...")
                 Task(priority: .high) { @MainActor in
                     for activity in Activity<TrackingAttributes>.activities {
                         let finalContent = ActivityContent(state: activity.content.state, staleDate: nil)
@@ -99,6 +105,7 @@ class TrackingViewModel {
                 UserDefaults.standard.set(true, forKey: "has_interrupted_ride")
             }
         }
+    }
     
     
     // Propriedades Computadas (Reagem automaticamente quando o TrackingService muda)
@@ -182,6 +189,8 @@ class TrackingViewModel {
             startTimer()
             self.updateLiveActivity()
         
+        UserDefaults.standard.set("tracking", forKey: "ongoing_ride_state")
+        
         AnalyticsManager.shared.trackEvent("Ride_Started", properties: [
                 "vehicle": activeUser?.substitutedVehicle?.rawValue ?? "Nenhum"
             ])
@@ -192,6 +201,8 @@ class TrackingViewModel {
         trackingService.pauseTracking()
         self.updateLiveActivity()
         timerTask?.cancel()
+        
+        UserDefaults.standard.set("paused", forKey: "ongoing_ride_state")
         
         AnalyticsManager.shared.trackEvent("Ride_Paused", properties: [
                 "distance": distanceInKm
@@ -205,6 +216,8 @@ class TrackingViewModel {
             trackingService.resumeTracking()
             self.updateLiveActivity()
             startTimer()
+        
+        UserDefaults.standard.set("tracking", forKey: "ongoing_ride_state")
         }
     
     func finishRide(localContext: ModelContext?, currentUser: User?) async {
@@ -259,6 +272,10 @@ class TrackingViewModel {
                 trackingService.stopTracking()
                 timerTask?.cancel()
                 timerTask = nil
+        
+            UserDefaults.standard.removeObject(forKey: "ongoing_ride_state")
+            UserDefaults.standard.removeObject(forKey: "last_saved_distance")
+            UserDefaults.standard.removeObject(forKey: "last_saved_duration")
         }
     func updateRideProgress(newDistance: Double) {
         // 1. Atualiza o serviço
@@ -270,6 +287,30 @@ class TrackingViewModel {
         
         // 3. Opcional: Chama o update da Live Activity se necessário
         self.updateLiveActivity()
+    }
+    
+    private func restoreOngoingRide() {
+        let savedState = UserDefaults.standard.string(forKey: "ongoing_ride_state")
+        
+        // Se não houver corrida pausada ou a decorrer, saímos
+        guard savedState == "paused" || savedState == "tracking" else { return }
+        
+        print("🔄 Recuperando corrida anterior com estado: \(savedState!)")
+        
+        // 1. Restaura as métricas
+        self.durationInSeconds = UserDefaults.standard.double(forKey: "last_saved_duration")
+        self.trackingService.currentDistance = UserDefaults.standard.double(forKey: "last_saved_distance")
+        self.currentState = savedState == "paused" ? .paused : .tracking
+        
+        // 2. Reconecta à Ilha Dinâmica que ficou órfã!
+        self.activity = Activity<TrackingAttributes>.activities.first
+        
+        // 3. Se a app foi fechada enquanto estava a TRACKING, retoma o motor
+        if self.currentState == .tracking {
+            self.rideStartTime = Date().addingTimeInterval(-self.durationInSeconds)
+            self.trackingService.resumeTracking()
+            self.startTimer()
+        }
     }
     
     func startLiveActivity() {

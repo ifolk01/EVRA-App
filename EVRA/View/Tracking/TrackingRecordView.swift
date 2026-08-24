@@ -16,6 +16,7 @@ struct TrackingRecordView: View {
     @Environment(TrackingViewModel.self) private var trackingVM
     var homeVM: HomeViewModel
     @Environment(\.modelContext) private var modelContext
+    @Environment(AppRouter.self) private var router
     
     // 🌙 Detetor de Tema
     @Environment(\.colorScheme) var colorScheme
@@ -49,6 +50,28 @@ struct TrackingRecordView: View {
                 MapPitchToggle()
             }
             .ignoresSafeArea()
+            
+            VStack {
+                            HStack {
+                                
+                                Button(action: {
+                                    router.showActiveTracking = false
+                                }) {
+                                    Image(systemName: "chevron.down.circle.fill")
+                                        .font(.system(size: 34))
+                                        // Adapta-se ao Dark Mode e ganha um leve fundo para não sumir no mapa
+                                        .foregroundColor(primaryText.opacity(0.8))
+                                        .background(Circle().fill(panelBg).frame(width: 30, height: 30))
+                                        .shadow(radius: 5)
+                                }
+                                .padding(.leading, 17)
+                                .padding(.top, 16)
+                                Spacer()
+                            }
+                            Spacer() // Este Spacer é a magia que empurra o botão lá para o topo!
+                        }
+                        .zIndex(1)
+            
             
             // MARK: - 2. Painel Flutuante de Telemetria
             VStack(spacing: 24) {
