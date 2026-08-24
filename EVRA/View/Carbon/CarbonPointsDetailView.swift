@@ -8,12 +8,26 @@
 
 import SwiftUI
 
+
 struct CarbonPointsDetailView: View {
     var homeVM: HomeViewModel
     
+    // 🌙 Detetor de Tema
+    @Environment(\.colorScheme) var colorScheme
+    
     var body: some View {
+        let isDark = colorScheme == .dark
+        let deepDark = Color(red: 0.08, green: 0.08, blue: 0.1)
+        let neonGreen = Color(red: 0.82, green: 1.0, blue: 0.2)
+        
+        let bgApp = isDark ? Color("LevGreenDark") : AppColors.levGreenBg
+        let cardBg = isDark ? deepDark : .white
+        let primaryText = isDark ? Color.white : .black
+        let secondaryText = isDark ? Color.white.opacity(0.6) : .gray
+        let accentColor = isDark ? neonGreen : AppColors.levBlue
+        
         ZStack {
-            AppColors.levGreenBg.ignoresSafeArea()
+            bgApp.ignoresSafeArea()
             
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 24) {
@@ -22,42 +36,48 @@ struct CarbonPointsDetailView: View {
                     VStack(spacing: 16) {
                         ZStack {
                             Circle()
-                                .fill(AppColors.levBlue.opacity(0.15))
+                                .fill(accentColor.opacity(0.15))
                                 .frame(width: 80, height: 80)
                             
                             Image(systemName: "bolt.fill")
-                                .foregroundColor(AppColors.levBlue)
+                                .foregroundColor(accentColor)
                                 .font(.system(size: 36, weight: .bold))
                         }
                         
-                        VStack(spacing: 4) {
-                            Text("Os seus Carbon Points")
+                        VStack(spacing: 6) {
+                            Text("Seus Carbon Points")
                                 .font(.subheadline)
-                                .foregroundColor(.gray)
+                                .fontWeight(.bold)
+                                .foregroundColor(secondaryText)
                             
                             let totalPoints = homeVM.currentUser?.totalCarbonPoints ?? 0
                             let spendablePoints = homeVM.currentUser?.spendableCarbonPoints ?? 0
                             
                             Text("\(totalPoints)")
-                                .font(.system(size: 48, weight: .black, design: .rounded))
-                                .foregroundColor(.black)
+                                .font(.system(size: 54, weight: .black, design: .rounded))
+                                .foregroundColor(primaryText)
+                                .minimumScaleFactor(0.5)
+                                .lineLimit(1)
                             
                             Text("XP Acumulado (Não se perde)")
                                 .font(.caption)
                                 .fontWeight(.bold)
-                                .foregroundColor(AppColors.levBlue)
+                                .foregroundColor(accentColor)
                             
-                            Text("Saldo disponível para compras: \(spendablePoints) pts")
-                                    .font(.subheadline)
-                                    .fontWeight(.bold)
-                                    .foregroundColor(.green)
-                                    .padding(.top, 8)
+                            Text("Saldo disponível para troca: \(spendablePoints) pts")
+                                .font(.subheadline)
+                                .fontWeight(.bold)
+                                .foregroundColor(isDark ? secondaryText : .green)
+                                .padding(.top, 8)
+                                .minimumScaleFactor(0.8)
+                                .lineLimit(1)
                         }
                     }
                     .frame(maxWidth: .infinity)
-                    .padding(24)
-                    .background(Color(UIColor.systemBackground))
-                    .cornerRadius(24)
+                    .padding(28)
+                    .background(cardBg)
+                    .clipShape(RoundedRectangle(cornerRadius: 32, style: .continuous))
+                    .shadow(color: Color.black.opacity(isDark ? 0.3 : 0.04), radius: 15, x: 0, y: 8)
                     
                     // MARK: - Detalhes do Nível Atual
                     let totalPoints = homeVM.currentUser?.totalCarbonPoints ?? 0
@@ -70,20 +90,22 @@ struct CarbonPointsDetailView: View {
                     let pointsNeededForNext = pointsPerLevel - pointsInCurrentLevel
                     let progressRatio = Double(pointsInCurrentLevel) / Double(pointsPerLevel)
                     
-                    VStack(alignment: .leading, spacing: 16) {
+                    VStack(alignment: .leading, spacing: 20) {
                         Text("Progresso de Graduação")
                             .font(.headline)
-                            .foregroundColor(.black)
+                            .fontWeight(.bold)
+                            .foregroundColor(primaryText)
                         
                         HStack {
                             VStack(alignment: .leading, spacing: 4) {
                                 Text("Nível Atual")
                                     .font(.caption)
-                                    .foregroundColor(.gray)
+                                    .fontWeight(.semibold)
+                                    .foregroundColor(secondaryText)
                                 Text("Nível \(currentLevel)")
                                     .font(.title3)
-                                    .fontWeight(.bold)
-                                    .foregroundColor(.black)
+                                    .fontWeight(.black)
+                                    .foregroundColor(primaryText)
                             }
                             
                             Spacer()
@@ -92,53 +114,68 @@ struct CarbonPointsDetailView: View {
                                 VStack(alignment: .trailing, spacing: 4) {
                                     Text("Prestígio")
                                         .font(.caption)
-                                        .foregroundColor(.gray)
+                                        .fontWeight(.semibold)
+                                        .foregroundColor(secondaryText)
                                     HStack(spacing: 4) {
                                         Image(systemName: "star.fill")
                                             .foregroundColor(.yellow)
                                         Text("\(prestigeCount)x")
-                                            .fontWeight(.bold)
-                                            .foregroundColor(.black)
+                                            .fontWeight(.black)
+                                            .foregroundColor(primaryText)
                                     }
                                 }
                             }
                         }
                         
-                        // Barra de Progresso Detalhada
+                        // Barra de Progresso Segura e Desportiva
                         VStack(spacing: 8) {
-                            ProgressView(value: progressRatio)
-                                .tint(AppColors.levBlue)
-                                .scaleEffect(x: 1, y: 2, anchor: .center)
+                            GeometryReader { geometry in
+                                ZStack(alignment: .leading) {
+                                    Capsule()
+                                        .frame(width: geometry.size.width, height: 12)
+                                        .foregroundColor(isDark ? Color.white.opacity(0.1) : Color(UIColor.systemGray5))
+                                    
+                                    Capsule()
+                                        .frame(width: geometry.size.width * CGFloat(progressRatio), height: 12)
+                                        .foregroundColor(accentColor)
+                                        .shadow(color: isDark ? accentColor.opacity(0.5) : Color.clear, radius: 8, x: 0, y: 0)
+                                }
+                            }
+                            .frame(height: 12)
                             
                             HStack {
                                 Text("Faltam \(pointsNeededForNext) pts")
                                     .font(.caption2)
-                                    .foregroundColor(.gray)
+                                    .fontWeight(.bold)
+                                    .foregroundColor(secondaryText)
                                 Spacer()
                                 Text("\(Int(progressRatio * 100))%")
                                     .font(.caption2)
-                                    .fontWeight(.bold)
-                                    .foregroundColor(AppColors.levBlue)
+                                    .fontWeight(.heavy)
+                                    .foregroundColor(accentColor)
                             }
                         }
                     }
-                    .padding(20)
-                    .background(Color(UIColor.systemBackground))
-                    .cornerRadius(20)
+                    .padding(24)
+                    .background(cardBg)
+                    .clipShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
+                    .shadow(color: Color.black.opacity(isDark ? 0.3 : 0.04), radius: 12, x: 0, y: 6)
                     
                     // MARK: - Como Ganhar Mais Pontos
                     VStack(alignment: .leading, spacing: 16) {
                         Text("Como Potencializar Pontos")
                             .font(.headline)
-                            .foregroundColor(.black)
+                            .fontWeight(.bold)
+                            .foregroundColor(primaryText)
                         
                         PointRuleRow(icon: "bicycle", title: "Pedaladas Diárias", description: "Cada quilómetro percorrido de E-bike soma pontos automáticos baseados no seu impacto evitado.")
                         PointRuleRow(icon: "leaf.fill", title: "Redução de CO2", description: "Substituir veículos poluentes multiplica o ganho ecológico de carbono.")
                         PointRuleRow(icon: "flame.fill", title: "Manter Ofensivas", description: "Pedalar consecutivamente mantém a sua atividade em alta rotação.")
                     }
-                    .padding(20)
-                    .background(Color(UIColor.systemBackground))
-                    .cornerRadius(20)
+                    .padding(24)
+                    .background(cardBg)
+                    .clipShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
+                    .shadow(color: Color.black.opacity(isDark ? 0.3 : 0.04), radius: 12, x: 0, y: 6)
                     
                 }
                 .padding(24)
@@ -150,30 +187,43 @@ struct CarbonPointsDetailView: View {
     }
 }
 
+// MARK: - Componente das Regras de Pontuação
 struct PointRuleRow: View {
+    @Environment(\.colorScheme) var colorScheme
     var icon: String
     var title: String
     var description: String
     
     var body: some View {
-        HStack(alignment: .top, spacing: 14) {
+        let isDark = colorScheme == .dark
+        let neonGreen = Color(red: 0.82, green: 1.0, blue: 0.2)
+        
+        let primaryText = isDark ? Color.white : .black
+        let secondaryText = isDark ? Color.white.opacity(0.6) : .gray
+        let accentColor = isDark ? neonGreen : AppColors.levBlue
+        
+        HStack(alignment: .top, spacing: 16) {
             ZStack {
                 Circle()
-                    .fill(AppColors.levBlue.opacity(0.1))
-                    .frame(width: 40, height: 40)
+                    .fill(accentColor.opacity(0.15))
+                    .frame(width: 44, height: 44)
                 Image(systemName: icon)
-                    .foregroundColor(AppColors.levBlue)
-                    .font(.system(size: 16))
+                    .foregroundColor(accentColor)
+                    .font(.system(size: 18, weight: .bold))
             }
             
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: 4) {
                 Text(title)
                     .font(.subheadline)
                     .fontWeight(.bold)
-                    .foregroundColor(.black)
+                    .foregroundColor(primaryText)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+                
                 Text(description)
                     .font(.caption)
-                    .foregroundColor(.gray)
+                    .foregroundColor(secondaryText)
+                    .fixedSize(horizontal: false, vertical: true) // Força o texto a não se cortar!
             }
         }
     }

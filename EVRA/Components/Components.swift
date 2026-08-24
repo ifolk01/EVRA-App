@@ -627,7 +627,7 @@ struct HighlightsCarouselView: View {
                     HighlightCard(
                         icon: "person.3.fill",
                         iconColor: .green,
-                        title: "A Sua Região",
+                        title: "A sua Região",
                         subtitle: "\(localMembers) ciclistas a competir.",
                         isLoading: isLoading
                     )
