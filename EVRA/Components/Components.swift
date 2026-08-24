@@ -761,11 +761,14 @@ struct RankingRow: View {
                     .fontWeight(.bold)
                     .foregroundColor(primaryText)
                     .lineLimit(1)
+                    .minimumScaleFactor(0.7)
                 
                 Text("\(co2) evitados")
                     .font(.caption2)
                     .fontWeight(.semibold)
                     .foregroundColor(secondaryText)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
             }
             
             Spacer()
@@ -775,6 +778,7 @@ struct RankingRow: View {
                 Text(points)
                     .font(.system(size: 18, weight: .black, design: .rounded))
                     .foregroundColor(accentColor)
+                    .layoutPriority(1)
             }
         }
         .padding(16)
