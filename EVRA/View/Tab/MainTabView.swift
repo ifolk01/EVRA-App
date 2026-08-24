@@ -15,8 +15,14 @@ struct MainTabView: View {
     var trackingVM: TrackingViewModel
     private let locationManager = CLLocationManager()
     @Query private var savedUsers: [User]
+    @Environment(\.colorScheme) var colorScheme
     
     var body: some View {
+        let isDark = colorScheme == .dark
+                let neonGreen = Color(red: 0.82, green: 1.0, blue: 0.2)
+                
+                // 🔥 A cor muda dependendo do modo do sistema
+                let activeTint = isDark ? neonGreen : AppColors.levBlue
         TabView {
             // Aba 1: Dashboard (Início)
             HomeDashboardView(homeVM: homeVM)
@@ -50,7 +56,7 @@ struct MainTabView: View {
                     Label("Perfil", systemImage: "person.crop.circle")
                 }
         }
-        .tint(AppColors.levBlue) // A cor do ícone quando a aba está selecionada
+        .tint(activeTint) // A cor do ícone quando a aba está selecionada
         .onAppear {
                     // 🔥 Injeta o utilizador instantaneamente assim que a TabBar carrega
                     if let user = savedUsers.first {
