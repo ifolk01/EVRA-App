@@ -58,7 +58,7 @@ struct HomeDashboardView: View {
                                 title: "CO2 Evitado",
                                 value: String(format: "%.1f", totalCO2InKg),
                                 unit: "kg",
-                                icon: "leaf",
+                                icon: "aqi.medium",
                                 iconColor: .green
                             )
                         }
@@ -69,8 +69,8 @@ struct HomeDashboardView: View {
                                 title: "Distância",
                                 value: String(format: "%.1f", totalDistance),
                                 unit: "km",
-                                icon: "location",
-                                iconColor: AppColors.levBlue
+                                icon: "location.north",
+                                iconColor: .blue
                             )
                         }
                     }
@@ -246,11 +246,11 @@ struct HomeDashboardView: View {
     private var benefitsSection: some View {
         let isDark = colorScheme == .dark
         let neonGreen = Color(red: 0.82, green: 1.0, blue: 0.2)
-        let deepDark = Color(red: 0.08, green: 0.08, blue: 0.1)
+        _ = Color(red: 0.08, green: 0.08, blue: 0.1)
         
         let primaryText = isDark ? Color.white : Color.black
-        let accentColor = isDark ? neonGreen : AppColors.levBlue
-        let secondaryText = isDark ? Color.white.opacity(0.6) : Color.gray
+        _ = isDark ? neonGreen : AppColors.levBlue
+        _ = isDark ? Color.white.opacity(0.6) : Color.gray
         
         return VStack(alignment: .leading, spacing: 15) {
             HStack {

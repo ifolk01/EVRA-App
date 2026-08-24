@@ -136,7 +136,7 @@ struct GoalsView: View {
                                 subtitle: "15 trajetos na semana",
                                 progress: min(Double(ridesThisWeek) / 15.0, 1.0),
                                 currentText: "\(ridesThisWeek) / 15",
-                                icon: "leaf.fill",
+                                icon: "apple.meditate",
                                 color: isDark ? .green : .green // Verde sempre verde!
                             )
                         }
@@ -182,63 +182,112 @@ struct GoalsView: View {
     }
     
     private func calculateAchievements() -> [AchievementItem] {
-        // 1. Primeira Volta (Desbloqueia se houver pelo menos 1 pedalada)
-        let firstRideUnlocked = !myRides.isEmpty // <- Alterado
-                let firstRideDateStr = formattedDate(for: myRides.last?.date) // <- Alterado
-                
-                // 2. Poupou 1kg de CO2 (Desbloqueia se totalCO2Kg >= 1.0)
-                let co2Unlocked = totalCO2Kg >= 1.0
-                
-                // 3. Ofensiva de Aço (Desbloqueia se pedalou 3 ou mais dias na semana)
-                let steelStreakUnlocked = activeDaysThisWeek.count >= 3
-                
-                // 4. Ritmo Urbano (Desbloqueia se houver uma corrida > 10 km)
-                let longRideUnlocked = myRides.contains { $0.distance >= 10.0 } // <- Alterado
-                
-                // 5. Mestre Verde (Desbloqueia se a distância total acumulada geral >= 50 km)
-                let totalLifetimeDistance = myRides.reduce(0) { $0 + $1.distance } // <- Alterado
-                let masterGreenUnlocked = totalLifetimeDistance >= 50.0
-                
-                // 6. Lenda LEV (Desbloqueia se total Lifetime Distance >= 200 km ou 10kg de CO2)
-                let levLegendUnlocked = totalLifetimeDistance >= 200.0 || totalCO2Kg >= 10.0
+        // --- CONQUISTAS ORIGINAIS ---
+        let firstRideUnlocked = !myRides.isEmpty
+        let firstRideDateStr = formattedDate(for: myRides.last?.date)
         
+        let co2Unlocked = totalCO2Kg >= 1.0
+        let steelStreakUnlocked = activeDaysThisWeek.count >= 3
+        let longRideUnlocked = myRides.contains { $0.distance >= 10.0 }
+        
+        let totalLifetimeDistance = myRides.reduce(0) { $0 + $1.distance }
+        let masterGreenUnlocked = totalLifetimeDistance >= 50.0
+        let levLegendUnlocked = totalLifetimeDistance >= 200.0 || totalCO2Kg >= 10.0
+        
+        // --- NOVAS CONQUISTAS CRIATIVAS E DESAFIADORAS ---
+        
+        // 7. Madrugador (Pedalou antes das 07:00 da manhã)
+        let earlyBirdUnlocked = myRides.contains { ride in
+            let hour = Calendar.current.component(.hour, from: ride.date)
+            return hour < 7
+        }
+        
+        // 8. Coruja Noturna (Pedalou após as 21:00)
+        let nightOwlUnlocked = myRides.contains { ride in
+            let hour = Calendar.current.component(.hour, from: ride.date)
+            return hour >= 21
+        }
+        
+        // 9. Fim de Semana Ativo (Pedalou tanto no Sábado quanto no Domingo na mesma semana)
+        let calendar = Calendar.current
+        let weekendUnlocked = myRides.contains { ride in
+            let weekday = calendar.component(.weekday, from: ride.date)
+            // 1 = Domingo, 7 = Sábado. Verificamos se há registos em ambos dias no histórico geral ou recente
+            return weekday == 1 || weekday == 7
+        } && myRides.filter { [1, 7].contains(calendar.component(.weekday, from: $0.date)) }.count >= 2
+        
+        // 10. Cento e Oitenta (Acumulou 180 km no total geral)
+        let distance180Unlocked = totalLifetimeDistance >= 180.0
+        
+        // 11. Guardião da Atmosfera (Poupou 25 kg de CO2 acumulados)
+        let co2GuardianUnlocked = totalCO2Kg >= 25.0
+        
+        // 12. Velocista Urbano (Atingiu uma velocidade média superior a 25 km/h numa pedalada)
+        let speedsterUnlocked = myRides.contains { ride in
+            let hours = ride.duration / 3600.0
+            let avgSpeed = hours > 0 ? (ride.distance / hours) : 0.0
+            return avgSpeed >= 25.0
+        }
+        
+        // 13. Maratona de Aço (Fez uma única pedalada de mais de 25 km)
+        let marathonUnlocked = myRides.contains { $0.distance >= 25.0 }
+        
+        // 14. Hábito Consistente (Tem pelo menos 10 pedaladas registadas no total)
+        let consistentUnlocked = myRides.count >= 10
+        
+        // 15. Veterano da E-Bike (Tem pelo menos 30 pedaladas registadas no total)
+        let veteranUnlocked = myRides.count >= 30
+        
+        // 16. Ciclista Imparável (Ofensiva completa: pedalou 5 dias na mesma semana)
+        let unstoppableUnlocked = activeDaysThisWeek.count >= 5
+        
+        // 17. Explorador de Horizontes (Acumulou 500 km no total geral)
+        let explorer500Unlocked = totalLifetimeDistance >= 500.0
+        
+        // 18. Pulmão de Aço (Poupou 50 kg de CO2 acumulados)
+        let lungSteelUnlocked = totalCO2Kg >= 50.0
+        
+        // 19. Madrugador Extremo (Pedalou antes das 05:30 da manhã)
+        let extremeEarlyUnlocked = myRides.contains { ride in
+            let hour = Calendar.current.component(.hour, from: ride.date)
+            let minute = Calendar.current.component(.minute, from: ride.date)
+            return hour < 5 || (hour == 5 && minute <= 30)
+        }
+        
+        // 20. Resistencia Noturna (Fez um trajeto noturno de mais de 10 km após as 20:00)
+        let nightResilienceUnlocked = myRides.contains { ride in
+            let hour = Calendar.current.component(.hour, from: ride.date)
+            return hour >= 20 && ride.distance >= 10.0
+        }
+        
+        // 21. Titã Ecológico (Superou 100 kg de CO2 evitados)
+        let titanEcoUnlocked = totalCO2Kg >= 100.0
+
         return [
-            AchievementItem(
-                icon: "bicycle",
-                title: "Primeira Volta",
-                subtitle: firstRideUnlocked ? firstRideDateStr : "Bloqueado",
-                isUnlocked: firstRideUnlocked
-            ),
-            AchievementItem(
-                icon: "leaf.fill",
-                title: "Poupou 1kg CO2",
-                subtitle: co2Unlocked ? "Concluído" : String(format: "%.1f / 1.0 kg", totalCO2Kg),
-                isUnlocked: co2Unlocked
-            ),
-            AchievementItem(
-                icon: "flame.fill",
-                title: "Ofensiva de Aço",
-                subtitle: steelStreakUnlocked ? "Concluído" : "\(activeDaysInfoText())",
-                isUnlocked: steelStreakUnlocked
-            ),
-            AchievementItem(
-                icon: "bolt.fill",
-                title: "Ritmo Urbano",
-                subtitle: longRideUnlocked ? "Concluído" : "Meta: 10km num trajeto",
-                isUnlocked: longRideUnlocked
-            ),
-            AchievementItem(
-                icon: "star.fill",
-                title: "Mestre Verde",
-                subtitle: masterGreenUnlocked ? "Concluído" : String(format: "%.0f / 50 km", totalLifetimeDistance),
-                isUnlocked: masterGreenUnlocked
-            ),
-            AchievementItem(
-                icon: "trophy.fill",
-                title: "Lenda",
-                subtitle: levLegendUnlocked ? "Concluído" : "Meta: 200 km totais",
-                isUnlocked: levLegendUnlocked
-            )
+            // Originais
+            AchievementItem(icon: "road.lanes.curved.right", title: "Primeira Volta", subtitle: firstRideUnlocked ? firstRideDateStr : "Bloqueado", isUnlocked: firstRideUnlocked),
+            AchievementItem(icon: "tree", title: "Poupou 1kg CO2", subtitle: co2Unlocked ? "Concluído" : String(format: "%.1f / 1.0 kg", totalCO2Kg), isUnlocked: co2Unlocked),
+            AchievementItem(icon: "horn.blast", title: "Ofensiva de Aço", subtitle: steelStreakUnlocked ? "Concluído" : "\(activeDaysThisWeek.count) / 3 dias", isUnlocked: steelStreakUnlocked),
+            AchievementItem(icon: "minus.plus.and.fluid.batteryblock", title: "Ritmo Urbano", subtitle: longRideUnlocked ? "Concluído" : "Meta: 10km num trajeto", isUnlocked: longRideUnlocked),
+            AchievementItem(icon: "tortoise", title: "Mestre Verde", subtitle: masterGreenUnlocked ? "Concluído" : String(format: "%.0f / 50 km", totalLifetimeDistance), isUnlocked: masterGreenUnlocked),
+            AchievementItem(icon: "hare", title: "Lenda", subtitle: levLegendUnlocked ? "Concluído" : "Meta: 200 km totais", isUnlocked: levLegendUnlocked),
+            
+            // Novas Conquistas Criativas
+            AchievementItem(icon: "sunrise.fill", title: "Madrugador", subtitle: earlyBirdUnlocked ? "Concluído" : "Pedalar antes das 07h", isUnlocked: earlyBirdUnlocked),
+            AchievementItem(icon: "moon.stars.fill", title: "Coruja Noturna", subtitle: nightOwlUnlocked ? "Concluído" : "Pedalar após as 21h", isUnlocked: nightOwlUnlocked),
+            AchievementItem(icon: "calendar.badge.clock", title: "Fim de Semana Ativo", subtitle: weekendUnlocked ? "Concluído" : "Pedalar Sáb. e Dom.", isUnlocked: weekendUnlocked),
+            AchievementItem(icon: "map.fill", title: "Cento e Oitenta", subtitle: distance180Unlocked ? "Concluído" : String(format: "%.0f / 180 km", totalLifetimeDistance), isUnlocked: distance180Unlocked),
+            AchievementItem(icon: "shield.lefthalf.filled", title: "Guardião do Ar", subtitle: co2GuardianUnlocked ? "Concluído" : String(format: "%.1f / 25 kg", totalCO2Kg), isUnlocked: co2GuardianUnlocked),
+            AchievementItem(icon: "gauge.with.needle.fill", title: "Velocista Urbano", subtitle: speedsterUnlocked ? "Concluído" : "Média > 25 km/h", isUnlocked: speedsterUnlocked),
+            AchievementItem(icon: "figure.outdoor.cycle", title: "Maratona de Aço", subtitle: marathonUnlocked ? "Concluído" : "Trajeto único > 25km", isUnlocked: marathonUnlocked),
+            AchievementItem(icon: "checkmark.seal.fill", title: "Hábito Consistente", subtitle: consistentUnlocked ? "Concluído" : "\(myRides.count) / 10 pedaladas", isUnlocked: consistentUnlocked),
+            AchievementItem(icon: "medal.fill", title: "Veterano E-Bike", subtitle: veteranUnlocked ? "Concluído" : "\(myRides.count) / 30 pedaladas", isUnlocked: veteranUnlocked),
+            AchievementItem(icon: "flame.circle.fill", title: "Ciclista Imparável", subtitle: unstoppableUnlocked ? "Concluído" : "5 dias na semana", isUnlocked: unstoppableUnlocked),
+            AchievementItem(icon: "globe.americas.fill", title: "Explorador 500", subtitle: explorer500Unlocked ? "Concluído" : String(format: "%.0f / 500 km", totalLifetimeDistance), isUnlocked: explorer500Unlocked),
+            AchievementItem(icon: "lungs.fill", title: "Pulmão de Aço", subtitle: lungSteelUnlocked ? "Concluído" : String(format: "%.1f / 50 kg", totalCO2Kg), isUnlocked: lungSteelUnlocked),
+            AchievementItem(icon: "alarm.fill", title: "Madrugador Extremo", subtitle: extremeEarlyUnlocked ? "Concluído" : "Pedalar antes das 05h30", isUnlocked: extremeEarlyUnlocked),
+            AchievementItem(icon: "eye.trianglebadge.exclamationmark.fill", title: "Resistência Noturna", subtitle: nightResilienceUnlocked ? "Concluído" : "Noturno > 10km", isUnlocked: nightResilienceUnlocked),
+            AchievementItem(icon: "crown.fill", title: "Titã Ecológico", subtitle: titanEcoUnlocked ? "Concluído" : String(format: "%.1f / 100 kg", totalCO2Kg), isUnlocked: titanEcoUnlocked)
         ]
     }
     

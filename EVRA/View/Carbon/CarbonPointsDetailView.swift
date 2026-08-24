@@ -7,6 +7,7 @@
 //
 
 import SwiftUI
+import SwiftData
 
 
 struct CarbonPointsDetailView: View {
@@ -67,7 +68,7 @@ struct CarbonPointsDetailView: View {
                             Text("Saldo disponível para troca: \(spendablePoints) pts")
                                 .font(.subheadline)
                                 .fontWeight(.bold)
-                                .foregroundColor(isDark ? secondaryText : .green)
+                                .foregroundColor(isDark ? .red : .green)
                                 .padding(.top, 8)
                                 .minimumScaleFactor(0.8)
                                 .lineLimit(1)
@@ -169,8 +170,8 @@ struct CarbonPointsDetailView: View {
                             .foregroundColor(primaryText)
                         
                         PointRuleRow(icon: "bicycle", title: "Pedaladas Diárias", description: "Cada quilómetro percorrido de E-bike soma pontos automáticos baseados no seu impacto evitado.")
-                        PointRuleRow(icon: "leaf.fill", title: "Redução de CO2", description: "Substituir veículos poluentes multiplica o ganho ecológico de carbono.")
-                        PointRuleRow(icon: "flame.fill", title: "Manter Ofensivas", description: "Pedalar consecutivamente mantém a sua atividade em alta rotação.")
+                        PointRuleRow(icon: "smoke.fill", title: "Redução de CO2", description: "Substituir veículos poluentes multiplica o ganho ecológico de carbono.")
+                        PointRuleRow(icon: "3.circle.fill", title: "Manter Ofensivas", description: "Pedalar consecutivamente mantém a sua atividade em alta rotação.")
                     }
                     .padding(24)
                     .background(cardBg)
@@ -227,4 +228,10 @@ struct PointRuleRow: View {
             }
         }
     }
+}
+
+#Preview {
+    CarbonPointsDetailView(homeVM: HomeViewModel())
+        .modelContainer(for: LocalRide.self, inMemory: true)
+
 }

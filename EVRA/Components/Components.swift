@@ -163,7 +163,7 @@ struct DashboardStatCard: View {
                     .fill(activeIconColor.opacity(0.15))
                     .frame(width: 44, height: 44)
                 Image(systemName: icon)
-                    .foregroundColor(activeIconColor)
+                    .foregroundColor(iconColor)
                     .font(.system(size: 20, weight: .bold))
             }
             
@@ -509,7 +509,7 @@ struct DashboardBenefitsLinkCard: View {
                         .fill(accentColor.opacity(0.15))
                         .frame(width: 50, height: 50)
                     Image(systemName: "gift.fill")
-                        .foregroundColor(accentColor)
+                        .foregroundColor(.purple)
                         .font(.system(size: 24, weight: .bold))
                 }
                 

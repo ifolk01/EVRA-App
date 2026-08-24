@@ -144,7 +144,7 @@ struct AnalyticsDashboardView: View {
                     
                     // Métrica 2: Total da Semana
                     VStack(alignment: .leading, spacing: 12) {
-                        Image(systemName: selectedMetric == .co2 ? "leaf.fill" : "location.fill")
+                        Image(systemName: selectedMetric == .co2 ? "aqi.medium" : "location.north.fill")
                             .foregroundColor(activeColor)
                             .font(.title2)
                         
