@@ -7,151 +7,164 @@
 import SwiftUI
 import SwiftData
 
+
 struct ProfileView: View {
-    
     @Bindable var homeVM: HomeViewModel
     @Environment(AppRouter.self) private var router
     @Environment(\.modelContext) private var modelContext
+    
+    // 🌙 Detetor de Tema
+    @Environment(\.colorScheme) var colorScheme
     
     // Estados para alertas e exclusão
     @State private var showAlert = false
     @State private var successMessage = ""
     @State private var mostrarAlertaExclusao = false
     
-    // MARK: - Novos Estados para Edição de Perfil
+    // Estados para Edição de Perfil
     @State private var isEditingProfile = false
     @State private var editName = ""
     @State private var editEmail = ""
     
     var body: some View {
+        // Cores do nosso Design System
+        let isDark = colorScheme == .dark
+        let neonGreen = Color(red: 0.82, green: 1.0, blue: 0.2)
+        
+        let bgApp = isDark ? Color("LevGreenDark") : AppColors.levGreenBg
+        let primaryText = isDark ? Color.white : .black
+        let secondaryText = isDark ? Color.white.opacity(0.6) : .gray
+        let accentColor = isDark ? neonGreen : AppColors.levBlue
+        let redAccent = isDark ? Color(red: 1.0, green: 0.4, blue: 0.4) : Color.red
+        
         NavigationStack {
-            ScrollView(showsIndicators: false) {
-                VStack(spacing: 24) {
-                    
-                    // 1. Cabeçalho do Perfil (Foto e Nome)
-                    VStack(spacing: 16) {
-                        Circle()
-                            .fill(AppColors.levBlue.opacity(0.15))
-                            .frame(width: 100, height: 100)
-                            .overlay(
+            ZStack {
+                bgApp.ignoresSafeArea()
+                
+                ScrollView(showsIndicators: false) {
+                    VStack(spacing: 30) { // Aumentado um pouco o espaçamento geral
+                        
+                        // MARK: - 1. Cabeçalho do Perfil (Foto e Nome)
+                        VStack(spacing: 16) {
+                            
+                            // Avatar Premium com Sombra
+                            ZStack {
+                                Circle()
+                                    .fill(accentColor.opacity(0.15))
+                                    .frame(width: 100, height: 100)
+                                
                                 Text(getInitials(from: homeVM.currentUser?.name ?? "Ciclista"))
-                                    .font(.system(size: 36, weight: .bold, design: .rounded))
-                                    .foregroundColor(AppColors.levBlue)
-                            )
-                        
-                        VStack(spacing: 4) {
-                            HStack {
-                                Text(homeVM.currentUser?.name ?? "Ciclista")
-                                    .font(.title2)
-                                    .fontWeight(.bold)
-                                
-                                // O BOTÃO DE EDITAR
-                                Button(action: {
-                                    prepararEdicao()
-                                }) {
-                                    Image(systemName: "pencil.circle.fill")
-                                        .foregroundColor(AppColors.levBlue)
-                                        .font(.title3)
-                                }
+                                    .font(.system(size: 36, weight: .heavy, design: .rounded))
+                                    .foregroundColor(accentColor)
                             }
+                            // Um leve glow no modo escuro, sombra no modo claro
+                            .shadow(color: accentColor.opacity(isDark ? 0.3 : 0.1), radius: 15, x: 0, y: 8)
                             
-                            Text(homeVM.currentUser?.email ?? "email@exemplo.com")
-                                .font(.subheadline)
-                                .foregroundColor(.gray)
-                        }
-                    }
-                    .padding(.top, 30)
-                    
-                    // 2. Seção Editável de Preferências
-                    if let user = homeVM.currentUser {
-                        ProfilePreferencesSection(
-                            substitutedVehicle: Binding(
-                                get: { user.substitutedVehicle ?? .car },
-                                set: { user.substitutedVehicle = $0 }
-                            ),
-                            bikeSerialNumber: Binding(
-                                get: { user.bikeSerialNumber ?? "" },
-                                set: { user.bikeSerialNumber = $0 }
-                            ),
-                            routes: Binding(
-                                get: { Set(user.routes) },
-                                set: { user.routes = Array($0) }
-                            ),
-                            onSave: { message, shouldAlert in
-                                do {
-                                    try modelContext.save()
+                            VStack(spacing: 4) {
+                                HStack(alignment: .center, spacing: 8) {
+                                    Text(homeVM.currentUser?.name ?? "Ciclista")
+                                        .font(.system(size: 28, weight: .heavy, design: .rounded))
+                                        .foregroundColor(primaryText)
+                                        .lineLimit(1)
+                                        .minimumScaleFactor(0.8)
                                     
-                                    UserDefaults.standard.set(user.substitutedVehicle?.rawValue, forKey: "user_substituted_vehicle")
-                                    // Sincroniza com a nuvem também as preferências
-                                    Task { try? await CloudKitService().saveUser(user) }
-                                    
-                                    if shouldAlert {
-                                        successMessage = message
-                                        showAlert = true
+                                    // O BOTÃO DE EDITAR
+                                    Button(action: {
+                                        prepararEdicao()
+                                    }) {
+                                        Image(systemName: "pencil.circle.fill")
+                                            .foregroundColor(accentColor)
+                                            .font(.title2)
                                     }
-                                } catch {
-                                    print("❌ Erro ao salvar preferências: \(error.localizedDescription)")
-                                }
-                            }
-                        )
-                        .padding(.horizontal, 16)
-                    }
-                                            
-                    Spacer(minLength: 40)
-                    
-                    // 3. Botão de Excluir Conta Permanentemente
-                    Button(action: {
-                        mostrarAlertaExclusao = true
-                    }) {
-                        Text("Excluir Conta Permanentemente")
-                            .foregroundColor(.red)
-                            .font(.subheadline)
-                            .fontWeight(.bold)
-                            .frame(maxWidth: .infinity)
-                            .padding()
-                            .background(Color.red.opacity(0.1))
-                            .cornerRadius(12)
-                    }
-                    .alert("Excluir Conta Permanentemente?", isPresented: $mostrarAlertaExclusao) {
-                        Button("Cancelar", role: .cancel) { }
-                        
-                        Button("Excluir Tudo", role: .destructive) {
-                            if let user = homeVM.currentUser {
-                                let userId = user.id
-                                
-                                Task {
-                                    let ckService = CloudKitService()
-                                    try? await ckService.deleteUser(userId: userId)
                                 }
                                 
-                                modelContext.delete(user)
-                                try? modelContext.save()
+                                Text(homeVM.currentUser?.email ?? "email@exemplo.com")
+                                    .font(.subheadline)
+                                    .fontWeight(.medium)
+                                    .foregroundColor(secondaryText)
+                                    .lineLimit(1)
+                                    .minimumScaleFactor(0.8)
                             }
-                            
-                            UserDefaults.standard.removeObject(forKey: "apple_user_id")
-                            UserDefaults.standard.set(false, forKey: "isLoggedIn")
-                            
-                            // Redireciona o utilizador de volta ao início
-                            router.currentState = .login
                         }
-                    } message: {
-                        Text("Esta ação é irreversível. Todos os seus dados, histórico de pedaladas e Carbon Points serão apagados permanentemente.")
+                        .padding(.top, 30)
+                        
+                        // MARK: - 2. Seção Editável de Preferências
+                        if let user = homeVM.currentUser {
+                            ProfilePreferencesSection(
+                                substitutedVehicle: Binding(
+                                    get: { user.substitutedVehicle ?? .car },
+                                    set: { user.substitutedVehicle = $0 }
+                                ),
+                                bikeSerialNumber: Binding(
+                                    get: { user.bikeSerialNumber ?? "" },
+                                    set: { user.bikeSerialNumber = $0 }
+                                ),
+                                routes: Binding(
+                                    get: { Set(user.routes) },
+                                    set: { user.routes = Array($0) }
+                                ),
+                                onSave: { message, shouldAlert in
+                                    do {
+                                        try modelContext.save()
+                                        UserDefaults.standard.set(user.substitutedVehicle?.rawValue, forKey: "user_substituted_vehicle")
+                                        Task { try? await CloudKitService().saveUser(user) }
+                                        
+                                        if shouldAlert {
+                                            successMessage = message
+                                            showAlert = true
+                                        }
+                                    } catch {
+                                        print("❌ Erro ao salvar preferências: \(error.localizedDescription)")
+                                    }
+                                }
+                            )
+                            .padding(.horizontal, 16)
+                        }
+                                                
+                        Spacer(minLength: 40)
+                        
+                        // MARK: - 3. Botão de Excluir Conta Permanentemente
+                        Button(action: {
+                            mostrarAlertaExclusao = true
+                        }) {
+                            Text("Excluir Conta Permanentemente")
+                                .font(.subheadline)
+                                .fontWeight(.bold)
+                                .foregroundColor(redAccent)
+                                .frame(maxWidth: .infinity)
+                                .padding()
+                                .background(.black)
+                                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                        }
+                        // Resto dos modificadores do botão de exclusão
+                        .alert("Excluir Conta Permanentemente?", isPresented: $mostrarAlertaExclusao) {
+                            Button("Cancelar", role: .cancel) { }
+                            Button("Excluir Tudo", role: .destructive) {
+                                if let user = homeVM.currentUser {
+                                    let userId = user.id
+                                    Task { try? await CloudKitService().deleteUser(userId: userId) }
+                                    modelContext.delete(user)
+                                    try? modelContext.save()
+                                }
+                                UserDefaults.standard.removeObject(forKey: "apple_user_id")
+                                UserDefaults.standard.set(false, forKey: "isLoggedIn")
+                                router.currentState = .login
+                            }
+                        } message: {
+                            Text("Esta ação é irreversível. Todos os seus dados, histórico de pedaladas e Carbon Points serão apagados permanentemente.")
+                        }
+                        .padding(.horizontal, 24) // Alinhado perfeitamente com as margens
+                        .padding(.bottom, 20)
                     }
-                    .padding(.horizontal, 16)
-                    .padding(.bottom, 20)
                 }
             }
-            .background(AppColors.levGreenBg.edgesIgnoringSafeArea(.all))
             .navigationTitle("Meu Perfil")
             .navigationBarTitleDisplayMode(.inline)
-            
-            // Alerta de sucesso geral
             .alert("Sucesso", isPresented: $showAlert) {
                 Button("OK", role: .cancel) { }
             } message: {
                 Text(successMessage)
             }
-            
             // MARK: - Janela de Edição de Dados Pessoais
             .sheet(isPresented: $isEditingProfile) {
                 NavigationStack {
@@ -173,11 +186,8 @@ struct ProfileView: View {
                             Button("Cancelar") { isEditingProfile = false }
                         }
                         ToolbarItem(placement: .confirmationAction) {
-                            Button("Guardar") {
-                                salvarDadosPessoais()
-                            }
-                            // Impede de guardar um nome totalmente em branco
-                            .disabled(editName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                            Button("Guardar") { salvarDadosPessoais() }
+                                .disabled(editName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                         }
                     }
                 }
@@ -186,6 +196,7 @@ struct ProfileView: View {
         }
         .onAppear { AnalyticsManager.shared.trackScreen("Tab_Profile") }
     }
+    
     
     // MARK: - Lógica de Edição de Perfil
     

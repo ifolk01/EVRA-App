@@ -140,6 +140,7 @@ struct OnboardingInfoRow: View {
 }
 
 struct DashboardStatCard: View {
+    @Environment(\.colorScheme) var colorScheme
     var title: String
     var value: String
     var unit: String
@@ -147,37 +148,50 @@ struct DashboardStatCard: View {
     var iconColor: Color
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Image(systemName: icon)
-                .font(.title2)
-                .foregroundColor(iconColor)
-                .padding(10)
-                .background(iconColor.opacity(0.15))
-                .clipShape(Circle())
+        let isDarkTheme = colorScheme == .dark
+        let neonGreen = Color(red: 0.82, green: 1.0, blue: 0.2)
+        let deepDark = Color(red: 0.08, green: 0.08, blue: 0.1)
+        
+        let cardBg = isDarkTheme ? deepDark : .white
+        let primaryText = isDarkTheme ? Color.white : .black
+        let secondaryText = isDarkTheme ? Color.white.opacity(0.6) : .gray
+        let activeIconColor = isDarkTheme ? neonGreen : iconColor
+        
+        VStack(alignment: .leading, spacing: 14) {
+            ZStack {
+                Circle()
+                    .fill(activeIconColor.opacity(0.15))
+                    .frame(width: 44, height: 44)
+                Image(systemName: icon)
+                    .foregroundColor(iconColor)
+                    .font(.system(size: 20, weight: .bold))
+            }
             
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: 2) {
                 Text(title)
                     .font(.caption)
-                    .foregroundColor(.gray)
+                    .fontWeight(.semibold)
+                    .foregroundColor(secondaryText)
                 
                 HStack(alignment: .firstTextBaseline, spacing: 2) {
                     Text(value)
-                        .font(.title2)
-                        .fontWeight(.bold)
-                        .foregroundColor(.black)
+                        .font(.system(size: 32, weight: .heavy, design: .rounded))
+                        .foregroundColor(primaryText)
+                        .minimumScaleFactor(0.5)
+                        .lineLimit(1)
                     
-                    if !unit.isEmpty {
-                        Text(unit)
-                            .font(.caption)
-                            .foregroundColor(.gray)
-                    }
+                    Text(unit)
+                        .font(.caption)
+                        .fontWeight(.bold)
+                        .foregroundColor(secondaryText)
                 }
             }
         }
-        .padding()
+        .padding(20)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color(UIColor.systemBackground))
-        .cornerRadius(20)
+        .background(cardBg)
+        .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+        .shadow(color: Color.black.opacity(isDarkTheme ? 0.3 : 0.04), radius: 12, x: 0, y: isDarkTheme ? 8 : 6)
     }
 }
 
@@ -228,36 +242,51 @@ struct HoldToFinishButton: View {
 
 /// Cartão para exibir o progresso de metas
 struct DashboardGoalCard: View {
+    @Environment(\.colorScheme) var colorScheme
     var title: String
     var subtitle: String
     var percentageText: String
     
     var body: some View {
-        HStack {
-            Image(systemName: "target")
-                .font(.title)
-                .foregroundColor(AppColors.levGreenBg)
-                .padding(12)
-                .background(Color.black.opacity(0.05))
-                .clipShape(Circle())
+        let isDarkTheme = colorScheme == .dark
+        let neonGreen = Color(red: 0.82, green: 1.0, blue: 0.2)
+        let deepDark = Color(red: 0.08, green: 0.08, blue: 0.1)
+        
+        let cardBg = isDarkTheme ? deepDark : .white
+        let primaryText = isDarkTheme ? Color.white : .black
+        let secondaryText = isDarkTheme ? Color.white.opacity(0.6) : .gray
+        let accentColor = isDarkTheme ? neonGreen : AppColors.levBlue
+        
+        HStack(spacing: 16) {
+            ZStack {
+                Circle()
+                    .fill(accentColor.opacity(0.15))
+                    .frame(width: 50, height: 50)
+                Image(systemName: "target")
+                    .foregroundColor(accentColor)
+                    .font(.system(size: 24, weight: .bold))
+            }
             
             VStack(alignment: .leading, spacing: 4) {
                 Text(title)
                     .font(.headline)
-                    .foregroundColor(.black)
+                    .fontWeight(.bold)
+                    .foregroundColor(primaryText)
                 Text(subtitle)
-                    .font(.caption)
-                    .foregroundColor(.gray)
+                    .font(.subheadline)
+                    .foregroundColor(secondaryText)
             }
             Spacer()
+            
             Text(percentageText)
-                .font(.title2)
-                .fontWeight(.bold)
-                .foregroundColor(AppColors.levBlue)
+                .font(.system(size: 24, weight: .heavy, design: .rounded))
+                .foregroundColor(accentColor)
         }
-        .padding()
-        .background(Color(UIColor.systemBackground))
-        .cornerRadius(20)
+        .padding(20)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(cardBg)
+        .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+        .shadow(color: Color.black.opacity(isDarkTheme ? 0.3 : 0.04), radius: 12, x: 0, y: isDarkTheme ? 8 : 6)
     }
 }
 
@@ -266,11 +295,12 @@ struct DashboardGoalCard: View {
 
 
 struct ProfilePreferencesSection: View {
+    @Environment(\.colorScheme) var colorScheme
+    
     @Binding var substitutedVehicle: SubstitutedVehicle
     @Binding var bikeSerialNumber: String
     
-    // 🔥 Agora usamos um Set<String> para gerir múltiplas seleções de forma super rápida e sem duplicados
-    @Binding var routes: Set<String> // 🔥 Mudou de usualRoutes para routes
+    @Binding var routes: Set<String>
     var onSave: (String, Bool) -> Void
     
     @Namespace private var animation
@@ -284,39 +314,58 @@ struct ProfilePreferencesSection: View {
     ]
     
     let routeOptions = ["Trabalho", "Faculdade", "Lazer", "Academia", "Mercado"]
-    
-    // Configuração da grelha adaptável para os chips de trajeto
     let gridColumns = [GridItem(.adaptive(minimum: 100, maximum: 140), spacing: 10)]
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 24) {
+        let isDark = colorScheme == .dark
+        let deepDark = Color(red: 0.08, green: 0.08, blue: 0.1)
+        let neonGreen = Color(red: 0.82, green: 1.0, blue: 0.2)
+        
+        let cardBg = isDark ? deepDark : .white
+        let primaryText = isDark ? Color.white : .black
+        let secondaryText = isDark ? Color.white.opacity(0.6) : .gray
+        let accentColor = isDark ? neonGreen : AppColors.levBlue
+        let activeText = isDark ? Color.black : Color.white
+        let inactiveBg = Color.gray.opacity(isDark ? 0.3 : 0.15)
+        
+        VStack(alignment: .leading, spacing: 28) {
             Text("Preferências de Mobilidade")
-                .font(.headline)
-                .foregroundColor(.black)
+                .font(.title3)
+                .fontWeight(.bold)
+                .foregroundColor(primaryText)
+                .lineLimit(1)
+                .minimumScaleFactor(0.8) // Proteção responsiva
             
             // 1. Veículo a ser substituído (Cápsulas Deslizantes)
-            VStack(alignment: .leading, spacing: 10) {
+            VStack(alignment: .leading, spacing: 12) {
                 Text("Veículo Habitual Substituído")
                     .font(.subheadline)
-                    .foregroundColor(.gray)
+                    .fontWeight(.semibold)
+                    .foregroundColor(secondaryText)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8) // Proteção responsiva
                 
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 8) {
                         ForEach(vehicleOptions, id: \.value) { option in
+                            let isSelected = substitutedVehicle == option.value
+                            
                             Text(option.label)
                                 .font(.subheadline)
                                 .fontWeight(.bold)
-                                .padding(.vertical, 8)
+                                .foregroundColor(isSelected ? activeText : secondaryText)
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.8) // Garante que o texto cabe na cápsula
+                                .padding(.vertical, 10)
                                 .padding(.horizontal, 16)
-                                .foregroundColor(substitutedVehicle == option.value ? .white : .black.opacity(0.7))
                                 .background(
                                     ZStack {
                                         Capsule()
-                                            .fill(Color.gray.opacity(0.15))
+                                            .fill(inactiveBg)
                                         
-                                        if substitutedVehicle == option.value {
+                                        if isSelected {
                                             Capsule()
-                                                .fill(AppColors.levBlue)
+                                                .fill(accentColor)
                                                 .matchedGeometryEffect(id: "VEHICLE_TAB", in: animation)
                                         }
                                     }
@@ -335,11 +384,14 @@ struct ProfilePreferencesSection: View {
                 }
             }
             
-            // 2. Trajetos Habituais (NOVO DESIGN COM CHIPS MÚLTIPLOS)
+            // 2. Trajetos Habituais (Chips Múltiplos)
             VStack(alignment: .leading, spacing: 12) {
                 Text("Trajetos Habituais / Frequentes")
                     .font(.subheadline)
-                    .foregroundColor(.gray)
+                    .fontWeight(.semibold)
+                    .foregroundColor(secondaryText)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8) // Proteção responsiva
                 
                 LazyVGrid(columns: gridColumns, alignment: .leading, spacing: 12) {
                     ForEach(routeOptions, id: \.self) { route in
@@ -351,24 +403,25 @@ struct ProfilePreferencesSection: View {
                             Text(route)
                                 .font(.caption)
                                 .fontWeight(.bold)
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.8) // Proteção responsiva
                         }
                         .padding(.vertical, 10)
                         .padding(.horizontal, 12)
                         .frame(maxWidth: .infinity, alignment: .center)
-                        .foregroundColor(isSelected ? .white : .black.opacity(0.7))
+                        .foregroundColor(isSelected ? activeText : secondaryText)
                         .background(
                             Capsule()
-                                .fill(isSelected ? AppColors.levBlue : Color.gray.opacity(0.15))
+                                .fill(isSelected ? accentColor : inactiveBg)
                         )
-                        // Animação de seleção e remoção
                         .onTapGesture {
                             withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
                                 if isSelected {
                                     routes.remove(route)
                                 } else {
                                     routes.insert(route)
-                                }                            }
-                            // Salva silenciosamente sempre que adiciona ou remove um trajeto
+                                }
+                            }
                             onSave("", false)
                         }
                     }
@@ -376,35 +429,43 @@ struct ProfilePreferencesSection: View {
             }
             
             // 3. Série da Bicicleta
-            VStack(alignment: .leading, spacing: 10) {
+            VStack(alignment: .leading, spacing: 12) {
                 Text("Número de Série da E-Bike")
                     .font(.subheadline)
-                    .foregroundColor(.gray)
+                    .fontWeight(.semibold)
+                    .foregroundColor(secondaryText)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8) // Proteção responsiva
                 
-                HStack {
+                HStack(spacing: 12) {
                     TextField("Ex: QWD-2026-9812", text: $bikeSerialNumber)
-                        .textFieldStyle(RoundedBorderTextFieldStyle())
+                        .padding(12)
+                        .background(isDark ? Color.white.opacity(0.1) : Color(.systemGray6))
+                        .cornerRadius(12)
+                        .foregroundColor(primaryText) // 🔥 Texto acompanha o tema (branco no Dark, preto no Light)
+                        .accentColor(accentColor) // A cor do cursor a piscar
                     
                     Button(action: {
                         onSave("Número de série da E-Bike atualizado com sucesso!", true)
                     }) {
                         Text("Salvar")
-                            .font(.caption)
+                            .font(.subheadline)
                             .fontWeight(.bold)
-                            .foregroundColor(.white)
-                            .padding(.horizontal, 16)
-                            .padding(.vertical, 10)
-                            .background(AppColors.levBlue)
-                            .cornerRadius(10)
+                            .foregroundColor(activeText)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.8)
+                            .padding(.horizontal, 20)
+                            .padding(.vertical, 12)
+                            .background(accentColor)
+                            .cornerRadius(12)
                     }
                 }
             }
-            
-            
         }
         .padding(24)
-        .background(Color(UIColor.systemBackground))
-        .cornerRadius(24)
+        .background(cardBg)
+        .clipShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
+        .shadow(color: Color.black.opacity(isDark ? 0.3 : 0.04), radius: 15, x: 0, y: 8)
     }
 }
 
@@ -428,49 +489,55 @@ let availableCoupons: [PartnerCoupon] = [
 
 /// Cartão horizontal para os benefícios e lojas parceiras
 struct DashboardBenefitsLinkCard: View {
-    
-    @Bindable var homeVM: HomeViewModel
+    @Environment(\.colorScheme) var colorScheme
+    var homeVM: HomeViewModel
     
     var body: some View {
+        let isDarkTheme = colorScheme == .dark
+        let neonGreen = Color(red: 0.82, green: 1.0, blue: 0.2)
+        let deepDark = Color(red: 0.08, green: 0.08, blue: 0.1)
         
-        let currentPoints = homeVM.currentUser?.spendableCarbonPoints ?? 0
-        NavigationLink(destination: BenefitsGalleryView(homeVM: homeVM)){
+        let cardBg = isDarkTheme ? deepDark : .white
+        let primaryText = isDarkTheme ? Color.white : .black
+        let secondaryText = isDarkTheme ? Color.white.opacity(0.6) : .gray
+        let accentColor = isDarkTheme ? neonGreen : Color.purple
+        
+        NavigationLink(destination: BenefitsGalleryView(homeVM: homeVM)) {
             HStack(spacing: 16) {
-                // Ícone de Destaque
                 ZStack {
                     Circle()
-                        .fill(AppColors.levBlue.opacity(0.15))
-                        .frame(width: 60, height: 60)
-                    
+                        .fill(accentColor.opacity(0.15))
+                        .frame(width: 50, height: 50)
                     Image(systemName: "gift.fill")
-                        .font(.system(size: 24))
-                        .foregroundColor(AppColors.levBlue)
+                        .foregroundColor(.purple)
+                        .font(.system(size: 24, weight: .bold))
                 }
                 
-                // Textos
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Trocar Pontos")
                         .font(.headline)
-                        .foregroundColor(.black)
+                        .fontWeight(.bold)
+                        .foregroundColor(primaryText)
                     
-                    Text("Você tem \(currentPoints) pts disponíveis")
+                    Text("Você tem \(homeVM.currentUser?.spendableCarbonPoints ?? 0) pts disponíveis")
                         .font(.subheadline)
-                        .foregroundColor(.gray)
+                        .foregroundColor(secondaryText)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
                 }
-                
                 Spacer()
                 
-                // Seta indicativa
                 Image(systemName: "chevron.right")
-                    .foregroundColor(AppColors.levBlue)
-                    .font(.system(size: 14, weight: .bold))
+                    .foregroundColor(secondaryText)
+                    .font(.system(size: 16, weight: .bold))
             }
             .padding(20)
-            .background(Color(UIColor.systemBackground))
-            .cornerRadius(24)
-            .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 5)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(cardBg)
+            .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+            .shadow(color: Color.black.opacity(isDarkTheme ? 0.3 : 0.04), radius: 12, x: 0, y: isDarkTheme ? 8 : 6)
         }
-        
+        .buttonStyle(PlainButtonStyle())
     }
 }
 
@@ -507,6 +574,8 @@ struct ActiveTrackingBanner: View {
 
 // MARK: - Carrossel de Destaques (Dinâmico)
 struct HighlightsCarouselView: View {
+    @Environment(\.colorScheme) var colorScheme
+    
     var globalLeader: String
     var globalPoints: Int
     var topCity: String
@@ -515,10 +584,13 @@ struct HighlightsCarouselView: View {
     var isLoading: Bool
     
     var body: some View {
+        let isDark = colorScheme == .dark
+        
         VStack(alignment: .leading, spacing: 12) {
             Text("Destaques da Comunidade")
-                .font(.headline)
+                .font(.title3)
                 .fontWeight(.bold)
+                .foregroundColor(isDark ? .white : .black)
                 .padding(.horizontal, 24)
             
             ScrollView(.horizontal, showsIndicators: false) {
@@ -538,8 +610,8 @@ struct HighlightsCarouselView: View {
                         icon: "flame.fill",
                         iconColor: .orange,
                         title: "Cidade em Alta",
-                        subtitle: "\(topCity) tem mais registros hoje.",
-                        isLoading: isLoading // Repassa para o cartão
+                        subtitle: "\(topCity) com mais registros.",
+                        isLoading: isLoading
                     )
                     
                     // Cartão 3: O Modal Campeão
@@ -548,16 +620,16 @@ struct HighlightsCarouselView: View {
                         iconColor: AppColors.levBlue,
                         title: "Modal em Alta",
                         subtitle: "\(topVehicle) lidera nas trocas.",
-                        isLoading: isLoading // Repassa para o cartão
+                        isLoading: isLoading
                     )
                     
                     // Cartão 4: A sua "Sala"
                     HighlightCard(
                         icon: "person.3.fill",
                         iconColor: .green,
-                        title: "A Sua Região",
+                        title: "A sua Região",
                         subtitle: "\(localMembers) ciclistas a competir.",
-                        isLoading: isLoading // Repassa para o cartão
+                        isLoading: isLoading
                     )
                 }
                 .padding(.horizontal, 24)
@@ -579,88 +651,136 @@ func getInitials(from name: String) -> String {
     return "CL" // "CL" para Ciclista, caso falhe
 }
 struct FeedCard: View {
+    @Environment(\.colorScheme) var colorScheme
+    
     var name: String
     var action: String
     var distance: String
     var time: String
     
     var body: some View {
+        let isDark = colorScheme == .dark
+        let neonGreen = Color(red: 0.82, green: 1.0, blue: 0.2)
+        let deepDark = Color(red: 0.08, green: 0.08, blue: 0.1)
+        
+        let cardBg = isDark ? deepDark : .white
+        let primaryText = isDark ? Color.white : .black
+        let secondaryText = isDark ? Color.white.opacity(0.6) : .gray
+        let accentColor = isDark ? neonGreen : AppColors.levBlue
+        
         HStack(spacing: 16) {
-            // 🔥 Substituição do ícone pela inicial do nome
-            Circle()
-                .fill(AppColors.levBlue.opacity(0.15))
-                .frame(width: 45, height: 45)
-                .overlay(
-                    Text(getInitials(from: name))
-                        .font(.system(size: 16, weight: .bold, design: .rounded))
-                        .foregroundColor(AppColors.levBlue)
-                )
+            // 🔥 Avatar com a inicial
+            ZStack {
+                Circle()
+                    .fill(accentColor.opacity(0.15))
+                    .frame(width: 44, height: 44)
+                
+                Text(getInitials(from: name))
+                    .font(.system(size: 16, weight: .bold, design: .rounded))
+                    .foregroundColor(accentColor)
+            }
             
             VStack(alignment: .leading, spacing: 4) {
+                // Nome e Ação
                 HStack(spacing: 4) {
-                    Text(name).fontWeight(.bold).foregroundColor(.black)
-                    Text(action).foregroundColor(.black.opacity(0.8))
+                    Text(name)
+                        .fontWeight(.bold)
+                        .foregroundColor(primaryText)
+                        .lineLimit(1) // Protege nomes gigantes
+                    
+                    Text(action)
+                        .foregroundColor(secondaryText)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8) // Permite encolher um pouco
                 }
                 .font(.subheadline)
-                .lineLimit(2)
                 
+                // Distância e Tempo
                 HStack {
-                    Text(distance).fontWeight(.bold).foregroundColor(AppColors.levBlue)
-                    Text("• \(time)").foregroundColor(.gray)
+                    Text(distance)
+                        .fontWeight(.bold)
+                        .foregroundColor(accentColor)
+                    
+                    Text("• \(time)")
+                        .foregroundColor(secondaryText)
                 }
                 .font(.caption)
             }
             Spacer()
         }
-        .padding()
-        .background(Color.white)
-        .cornerRadius(16)
+        .padding(16)
+        .background(cardBg)
+        // O toque da Apple: Cantos contínuos e sombra dinâmica
+        .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+        .shadow(color: Color.black.opacity(isDark ? 0.3 : 0.04), radius: 10, x: 0, y: 5)
     }
+    
+    // (A sua função getInitials já deve estar algures no ficheiro ou pode mantê-la onde está!)
 }
 
 struct RankingRow: View {
+    @Environment(\.colorScheme) var colorScheme
     var position: Int
     var name: String
     var points: String
     var co2: String
     
     var body: some View {
-        HStack(spacing: 10) { // Adicionado spacing para respirar
+        let isDark = colorScheme == .dark
+        let neonGreen = Color(red: 0.82, green: 1.0, blue: 0.2)
+        let deepDark = Color(red: 0.08, green: 0.08, blue: 0.1)
+        
+        let cardBg = isDark ? deepDark : .white
+        let primaryText = isDark ? Color.white : .black
+        let secondaryText = isDark ? Color.white.opacity(0.6) : .gray
+        let accentColor = isDark ? neonGreen : AppColors.levBlue
+        
+        HStack(spacing: 16) {
+            
+            // Posição (O número do pódio)
             Text("\(position)º")
-                .font(.headline)
-                .fontWeight(.bold)
-                .foregroundColor(.black.opacity(0.5))
-                .frame(width: 30, alignment: .leading)
+                .font(.system(size: 20, weight: .heavy, design: .rounded))
+                .foregroundColor(secondaryText)
+                .frame(width: 35, alignment: .leading)
             
-            // 🔥 Avatar com a inicial adicionado ao Ranking!
-            Circle()
-                .fill(AppColors.levBlue.opacity(0.15))
-                .frame(width: 40, height: 40)
-                .overlay(
-                    Text(getInitials(from: name))
-                        .font(.system(size: 14, weight: .bold, design: .rounded))
-                        .foregroundColor(AppColors.levBlue)
-                )
+            // Avatar Placeholder Circular
+            ZStack {
+                Circle()
+                    .fill(accentColor.opacity(0.15))
+                    .frame(width: 44, height: 44)
+                    .overlay(
+                Text(getInitials(from: name))
+                    .font(.system(size: 14, weight: .bold, design: .rounded))
+                    .foregroundColor(accentColor))
+            }
             
-            Text(name)
-                .font(.headline)
-                .foregroundColor(.black)
+            // Nome e Estatísticas Pessoais
+            VStack(alignment: .leading, spacing: 4) {
+                Text(name)
+                    .font(.headline)
+                    .fontWeight(.bold)
+                    .foregroundColor(primaryText)
+                    .lineLimit(1)
+                
+                Text("\(co2) evitados")
+                    .font(.caption2)
+                    .fontWeight(.semibold)
+                    .foregroundColor(secondaryText)
+            }
             
             Spacer()
             
-            VStack(alignment: .trailing) {
+            // Pontuação Destacada
+            VStack(alignment: .trailing, spacing: 2) {
                 Text(points)
-                    .font(.subheadline)
-                    .fontWeight(.bold)
-                    .foregroundColor(AppColors.levBlue)
-                Text("\(co2) CO2")
-                    .font(.caption2)
-                    .foregroundColor(.gray)
+                    .font(.system(size: 18, weight: .black, design: .rounded))
+                    .foregroundColor(accentColor)
             }
         }
-        .padding()
-        .background(Color.white)
-        .cornerRadius(16)
+        .padding(16)
+        .background(cardBg)
+        .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+        .shadow(color: Color.black.opacity(isDark ? 0.3 : 0.04), radius: 10, x: 0, y: 5)
     }
 }
 
@@ -672,12 +792,12 @@ struct EmptyStateView: View {
         VStack(spacing: 12) {
             Image(systemName: "exclamationmark.triangle")
                 .font(.system(size: 40, weight: .light))
-                .foregroundColor(.gray)
+                .foregroundColor(.white)
             
             Text(message)
                 .font(.subheadline)
                 .multilineTextAlignment(.center)
-                .foregroundColor(.gray.opacity(0.8))
+                .foregroundColor(.white.opacity(0.8))
         }
         .padding(.top, 40)
     }
@@ -755,6 +875,7 @@ struct LiveFeedSection: View {
 }
 
 struct HighlightCard: View {
+    @Environment(\.colorScheme) var colorScheme
     var icon: String
     var iconColor: Color
     var title: String
@@ -762,29 +883,55 @@ struct HighlightCard: View {
     var isLoading: Bool
     
     var body: some View {
-        HStack(spacing: 12) {
-            Circle()
-                .fill(iconColor.opacity(0.15))
-                .frame(width: 40, height: 40)
-                .overlay(Image(systemName: icon).foregroundColor(iconColor))
+        let isDark = colorScheme == .dark
+        let deepDark = Color(red: 0.08, green: 0.08, blue: 0.1)
+        
+        let cardBg = isDark ? deepDark : .white
+        let primaryText = isDark ? Color.white : .black
+        let secondaryText = isDark ? Color.white.opacity(0.6) : .gray
+        
+        HStack(spacing: 16) {
             
-            VStack(alignment: .leading, spacing: 4) {
-                Text(title)
-                    .font(.subheadline)
-                    .fontWeight(.bold)
-                    .foregroundColor(.black)
-                
-                Text(subtitle)
-                    .font(.caption)
-                    .foregroundColor(.gray)
-                    .lineLimit(2)
+            // Ícone num círculo suave
+            ZStack {
+                Circle()
+                    .fill(iconColor.opacity(0.15))
+                    .frame(width: 44, height: 44)
+                Image(systemName: icon)
+                    .foregroundColor(iconColor)
+                    .font(.system(size: 20, weight: .bold))
             }
-            .redacted(reason: isLoading ? .placeholder : [])
+            
+            // Textos com proteção responsiva
+            VStack(alignment: .leading, spacing: 4) {
+                if isLoading {
+                    // Efeito de "Skeleton" enquanto carrega do CloudKit
+                    RoundedRectangle(cornerRadius: 4)
+                        .fill(secondaryText.opacity(0.2))
+                        .frame(width: 100, height: 16)
+                    RoundedRectangle(cornerRadius: 4)
+                        .fill(secondaryText.opacity(0.1))
+                        .frame(width: 140, height: 12)
+                } else {
+                    Text(title)
+                        .font(.headline)
+                        .fontWeight(.bold)
+                        .foregroundColor(primaryText)
+                        .lineLimit(1) // Protege contra quebras
+                        .minimumScaleFactor(0.8) // Permite encolher um pouco se precisar
+                    
+                    Text(subtitle)
+                        .font(.subheadline)
+                        .foregroundColor(secondaryText)
+                        .lineLimit(1) // Protege contra quebras
+                        .minimumScaleFactor(0.8)
+                }
+            }
         }
-        .frame(width: 220, alignment: .leading)
         .padding(16)
-        .background(Color.white)
-        .cornerRadius(16)
-        .shadow(color: .black.opacity(0.05), radius: 5, x: 0, y: 2)
+        .frame(minWidth: 260, alignment: .leading) // Garante que todos têm o mesmo tamanho mínimo no carrossel
+        .background(cardBg)
+        .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+        .shadow(color: Color.black.opacity(isDark ? 0.3 : 0.04), radius: 10, x: 0, y: 5)
     }
 }

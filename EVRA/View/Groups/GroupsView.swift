@@ -11,33 +11,40 @@ struct GroupsView: View {
     @StateObject private var viewModel = GroupsViewModel()
     @State private var selectedTab = 0
     
+    // O detetor de tema
+    @Environment(\.colorScheme) var colorScheme
+    
     var body: some View {
+        let isDark = colorScheme == .dark
+        let deepDark = Color(red: 0.08, green: 0.08, blue: 0.1)
+        
         NavigationStack {
             ZStack {
-                AppColors.levGreenBg.ignoresSafeArea()
+                // Fundo Dinâmico
+                (isDark ? Color("LevGreenDark") : AppColors.levGreenBg)
+                    .ignoresSafeArea()
                 
                 VStack(spacing: 0) {
                     
-                    // MARK: - 1. Novo Cabeçalho (Estilo Pílula da Imagem)
+                    // MARK: - 1. Novo Cabeçalho Estilizado
                     HStack {
                         HStack(spacing: 8) {
-                            Image(systemName: "mappin.and.ellipse")
-                                .foregroundColor(.black)
+                            Image(systemName: "globe.americas.fill") // Mudamos para globo por ser um ranking global!
+                                .foregroundColor(isDark ? Color(red: 0.82, green: 1.0, blue: 0.2) : AppColors.levBlue)
+                                .font(.system(size: 16, weight: .bold))
+                            
                             Text(viewModel.groupName)
                                 .font(.subheadline)
-                                .fontWeight(.semibold)
-                                .foregroundColor(.black)
-                      
+                                .fontWeight(.bold)
+                                .foregroundColor(isDark ? .white : .black)
                         }
                         .padding(.horizontal, 16)
                         .padding(.vertical, 10)
-                        .background(Color.white)
+                        .background(isDark ? deepDark : Color.white)
                         .clipShape(Capsule())
-                        .shadow(color: .black.opacity(0.05), radius: 5, x: 0, y: 2)
+                        .shadow(color: Color.black.opacity(isDark ? 0.3 : 0.05), radius: 8, x: 0, y: 4)
                         
                         Spacer()
-                        
-                    
                     }
                     .padding(.horizontal, 24)
                     .padding(.top, 10)
@@ -46,15 +53,15 @@ struct GroupsView: View {
                     ScrollView(showsIndicators: false) {
                         VStack(spacing: 24) {
                             
-                            // MARK: - 2. Carrossel de Destaques (Interatividade)
+                            // MARK: - 2. Carrossel de Destaques
                             HighlightsCarouselView(
-                                                    globalLeader: viewModel.globalTopUser,
-                                                    globalPoints: viewModel.globalTopPoints,
-                                                    topCity: viewModel.topActiveCity,
-                                                    topVehicle: viewModel.topVehicle,
-                                                    localMembers: viewModel.memberCount,
-                                                    isLoading: viewModel.isLoadingHighlights
-                                                )
+                                globalLeader: viewModel.globalTopUser,
+                                globalPoints: viewModel.globalTopPoints,
+                                topCity: viewModel.topActiveCity,
+                                topVehicle: viewModel.topVehicle,
+                                localMembers: viewModel.memberCount,
+                                isLoading: viewModel.isLoadingHighlights
+                            )
                             
                             // MARK: - 3. Toggle de Visão
                             Picker("Visão", selection: $selectedTab) {
@@ -80,14 +87,9 @@ struct GroupsView: View {
             }
             .navigationBarHidden(true)
             .onAppear {
-                            // 1. Verifica se trocou de veículo
-                            viewModel.checkVehiclePreference()
-                            
-                            // 2. Força a atualização dos dados do Ranking e Feed toda a vez que abrir a aba!
-                            Task {
-                                await viewModel.refreshData()
-                            }
-                        }
+                viewModel.checkVehiclePreference()
+                Task { await viewModel.refreshData() }
+            }
         }
     }
 }

@@ -15,16 +15,30 @@ enum DashboardMetric: String, CaseIterable {
 
 struct AnalyticsDashboardView: View {
     @Query(sort: \LocalRide.date, order: .reverse) private var allRides: [LocalRide]
-    
-    // O estado que controla qual gráfico está a ser mostrado
     @State private var selectedMetric: DashboardMetric
     
-    // Permite que o ecrã inicie na aba certa dependendo de qual cartão o utilizador clicou
+    // 🌙 O Detetor de Tema
+    @Environment(\.colorScheme) var colorScheme
+    
     init(initialMetric: DashboardMetric = .co2) {
         _selectedMetric = State(initialValue: initialMetric)
     }
     
     var body: some View {
+        let isDark = colorScheme == .dark
+        let deepDark = Color(red: 0.08, green: 0.08, blue: 0.1)
+        let neonGreen = Color(red: 0.82, green: 1.0, blue: 0.2)
+        
+        let bgApp = isDark ? Color("LevGreenDark") : AppColors.levGreenBg
+        let cardBg = isDark ? deepDark : .white
+        let primaryText = isDark ? Color.white : .black
+        let secondaryText = isDark ? Color.white.opacity(0.6) : .gray
+        
+        // Cores Dinâmicas Baseadas na Métrica Selecionada e no Tema
+        let co2Color = isDark ? neonGreen : .green
+        let distColor = isDark ? Color(red: 0.4, green: 0.8, blue: 1.0) : AppColors.levBlue // Azul mais vibrante no Dark Mode
+        let activeColor = selectedMetric == .co2 ? co2Color : distColor
+        
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
                 
@@ -33,9 +47,9 @@ struct AnalyticsDashboardView: View {
                     Text("Análise de Desempenho")
                         .font(.title2)
                         .fontWeight(.bold)
-                        .foregroundColor(.black)
+                        .foregroundColor(primaryText)
                     
-                    // O seletor que alterna entre CO2 e Distância
+                    // O seletor
                     Picker("Métrica", selection: $selectedMetric) {
                         ForEach(DashboardMetric.allCases, id: \.self) { metric in
                             Text(metric.rawValue).tag(metric)
@@ -46,11 +60,11 @@ struct AnalyticsDashboardView: View {
                 .padding(.horizontal)
                 .padding(.top, 10)
                 
-                // MARK: - Gráfico Dinâmico
+                // MARK: - Gráfico Dinâmico (Redesenhado)
                 VStack(alignment: .leading, spacing: 16) {
                     Text("Últimos 7 dias")
                         .font(.headline)
-                        .foregroundColor(.black)
+                        .foregroundColor(primaryText)
                     
                     Chart(dailyData) { dataPoint in
                         BarMark(
@@ -62,12 +76,9 @@ struct AnalyticsDashboardView: View {
                         )
                         .foregroundStyle(
                             LinearGradient(
-                                // Se for CO2 fica verde, se for Distância fica o Azul da LEV
-                                colors: selectedMetric == .co2
-                                    ? [.green, .green.opacity(0.5)]
-                                    : [AppColors.levBlue, AppColors.levBlue.opacity(0.5)],
-                                startPoint: .bottom,
-                                endPoint: .top
+                                colors: [activeColor, activeColor.opacity(0.3)],
+                                startPoint: .top, // Invertemos para o brilho ficar no topo da barra
+                                endPoint: .bottom
                             )
                         )
                         .cornerRadius(6)
@@ -76,7 +87,8 @@ struct AnalyticsDashboardView: View {
                             if value > 0 {
                                 Text(String(format: "%.1f", value))
                                     .font(.caption2)
-                                    .foregroundColor(.gray)
+                                    .fontWeight(.bold)
+                                    .foregroundColor(secondaryText)
                             }
                         }
                     }
@@ -84,16 +96,27 @@ struct AnalyticsDashboardView: View {
                     .chartXAxis {
                         AxisMarks(values: .stride(by: .day)) { _ in
                             AxisValueLabel(format: .dateTime.weekday(.abbreviated))
+                                .foregroundStyle(secondaryText) // Eixo com cor adaptável
+                        }
+                    }
+                    .chartYAxis {
+                        AxisMarks { _ in
+                            AxisGridLine(stroke: StrokeStyle(lineWidth: 1, dash: [5]))
+                                .foregroundStyle(secondaryText.opacity(0.3)) // Grelha mais subtil
+                            AxisValueLabel()
+                                .foregroundStyle(secondaryText) // Eixo com cor adaptável
                         }
                     }
                 }
-                .padding()
-                .background(Color.white)
-                .cornerRadius(20)
+                .padding(20)
+                .background(cardBg)
+                .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+                .shadow(color: Color.black.opacity(isDark ? 0.3 : 0.04), radius: 12, x: 0, y: 6)
                 .padding(.horizontal)
                 
-                // MARK: - Destaques e Métricas
+                // MARK: - Destaques e Métricas (Cartões Gêmeos)
                 HStack(spacing: 15) {
+                    
                     // Métrica 1: Melhor Dia
                     VStack(alignment: .leading, spacing: 12) {
                         Image(systemName: "crown.fill")
@@ -102,39 +125,47 @@ struct AnalyticsDashboardView: View {
                         
                         Text("Melhor Dia")
                             .font(.caption)
-                            .foregroundColor(.gray)
+                            .fontWeight(.semibold)
+                            .foregroundColor(secondaryText)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.8)
                         
                         Text(bestDayText)
-                            .font(.headline)
-                            .foregroundColor(.black)
+                            .font(.system(size: 20, weight: .heavy, design: .rounded))
+                            .foregroundColor(primaryText)
                             .lineLimit(1)
-                            .minimumScaleFactor(0.5)
+                            .minimumScaleFactor(0.6)
                     }
-                    .padding()
+                    .padding(20)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(Color.white)
-                    .cornerRadius(20)
+                    .background(cardBg)
+                    .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+                    .shadow(color: Color.black.opacity(isDark ? 0.3 : 0.04), radius: 10, x: 0, y: 5)
                     
                     // Métrica 2: Total da Semana
                     VStack(alignment: .leading, spacing: 12) {
-                        Image(systemName: selectedMetric == .co2 ? "leaf.fill" : "location.fill")
-                            .foregroundColor(selectedMetric == .co2 ? .green : AppColors.levBlue)
+                        Image(systemName: selectedMetric == .co2 ? "aqi.medium" : "location.north.fill")
+                            .foregroundColor(activeColor)
                             .font(.title2)
                         
                         Text("Nesta Semana")
                             .font(.caption)
-                            .foregroundColor(.gray)
+                            .fontWeight(.semibold)
+                            .foregroundColor(secondaryText)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.8)
                         
                         Text(String(format: selectedMetric == .co2 ? "%.1f kg" : "%.1f km", totalThisWeek))
-                            .font(.headline)
-                            .foregroundColor(.black)
+                            .font(.system(size: 20, weight: .heavy, design: .rounded))
+                            .foregroundColor(primaryText)
                             .lineLimit(1)
-                            .minimumScaleFactor(0.5)
+                            .minimumScaleFactor(0.6)
                     }
-                    .padding()
+                    .padding(20)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(Color.white)
-                    .cornerRadius(20)
+                    .background(cardBg)
+                    .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+                    .shadow(color: Color.black.opacity(isDark ? 0.3 : 0.04), radius: 10, x: 0, y: 5)
                 }
                 .padding(.horizontal)
                 
@@ -142,7 +173,7 @@ struct AnalyticsDashboardView: View {
             }
             .padding(.bottom, 30)
         }
-        .background(AppColors.levGreenBg.edgesIgnoringSafeArea(.all))
+        .background(bgApp)
         .navigationTitle(selectedMetric == .co2 ? "Análise de CO2" : "Análise de Distância")
         .navigationBarTitleDisplayMode(.inline)
     }

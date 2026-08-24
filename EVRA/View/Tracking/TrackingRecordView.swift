@@ -10,28 +10,38 @@ import SwiftUI
 import SwiftData
 import CoreLocation
 import CoreMotion
-import MapKit // 🔥 Adicionado para o fundo imersivo
+import MapKit
 
 struct TrackingRecordView: View {
-    // Recebe as ViewModels injetadas
     @Environment(TrackingViewModel.self) private var trackingVM
     var homeVM: HomeViewModel
     @Environment(\.modelContext) private var modelContext
     
-    // Estados para controlar o Alerta de Bloqueio
+    // 🌙 Detetor de Tema
+    @Environment(\.colorScheme) var colorScheme
+    
     @State private var showErrorAlert = false
     @State private var alertMessage = ""
-    
-    // Controlo da câmara do mapa
     @State private var cameraPosition: MapCameraPosition = .userLocation(fallback: .automatic)
     
     var body: some View {
         @Bindable var bindableVM = trackingVM
+        
+        let isDark = colorScheme == .dark
+        let neonGreen = Color(red: 0.82, green: 1.0, blue: 0.2)
+        let deepDark = Color(red: 0.08, green: 0.08, blue: 0.1)
+        
+        let panelBg = isDark ? deepDark.opacity(0.95) : Color.white.opacity(0.95)
+        let primaryText = isDark ? Color.white : .black
+        let secondaryText = isDark ? Color.white.opacity(0.6) : .gray
+        let accentColor = isDark ? neonGreen : AppColors.levBlue
+        let playButtonColor = isDark ? neonGreen : AppColors.levBlue
+        
         ZStack(alignment: .bottom) {
             
             // MARK: - 1. O Mapa em Background
             Map(position: $cameraPosition) {
-                UserAnnotation() // Mostra a bolinha azul nativa com a direção do utilizador
+                UserAnnotation()
             }
             .mapControls {
                 MapUserLocationButton()
@@ -49,22 +59,23 @@ struct TrackingRecordView: View {
                         Text("Substituindo")
                             .font(.caption)
                             .fontWeight(.bold)
-                            .foregroundColor(.gray)
+                            .foregroundColor(secondaryText)
                         
                         HStack(spacing: 8) {
                             let vehicleIcon = getVehicleIcon(for: homeVM.currentUser?.substitutedVehicle)
                             Image(systemName: vehicleIcon)
-                                .foregroundColor(AppColors.levBlue)
+                                .foregroundColor(accentColor)
+                                .font(.system(size: 16, weight: .bold))
                             
                             Text(homeVM.currentUser?.substitutedVehicle?.rawValue ?? "Veículo")
                                 .font(.subheadline)
-                                .fontWeight(.semibold)
-                                .foregroundColor(.black)
+                                .fontWeight(.bold)
+                                .foregroundColor(primaryText)
                         }
                     }
                     Spacer()
                     
-                    // Indicador de Estado Visual
+                    // Indicador de Estado Visual (A Gravar)
                     if trackingVM.currentState == .tracking {
                         HStack(spacing: 6) {
                             Circle()
@@ -75,55 +86,57 @@ struct TrackingRecordView: View {
                                 .fontWeight(.bold)
                                 .foregroundColor(.red)
                         }
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 4)
-                        .background(Color.red.opacity(0.1))
-                        .cornerRadius(10)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 6)
+                        .background(Color.red.opacity(0.15))
+                        .clipShape(Capsule())
                     }
                 }
                 
-                Divider().background(Color.gray.opacity(0.2))
+                Divider().background(secondaryText.opacity(0.3))
                 
                 // Métricas Principais (O Grande Destaque do CO2)
-                HStack {
-                    VStack(alignment: .leading, spacing: -2) {
+                HStack(alignment: .firstTextBaseline) {
+                    VStack(alignment: .leading, spacing: -4) {
                         Text(trackingVM.formattedCO2)
-                            .font(.system(size: 48, weight: .black, design: .rounded))
-                            .foregroundColor(.black)
-                            .minimumScaleFactor(0.5)
+                            .font(.system(size: 54, weight: .black, design: .rounded))
+                            .foregroundColor(primaryText)
+                            .minimumScaleFactor(0.4)
                             .lineLimit(1)
                         
-                        Text("CO₂ evitados")
-                            .font(.headline)
-                            .foregroundColor(.gray)
+                        Text("g CO₂ evitados")
+                            .font(.subheadline)
+                            .fontWeight(.bold)
+                            .foregroundColor(secondaryText)
                     }
                     
                     Spacer()
                     
-                    // Gamificação dinâmica (Cálculo direto: 1 pt por cada 100g)
-                    VStack(alignment: .trailing, spacing: 4) {
+                    // Gamificação dinâmica
+                    VStack(alignment: .trailing, spacing: 2) {
                         Text("\(Int(trackingVM.co2AvoidedGrams / 100))")
-                            .font(.system(size: 32, weight: .heavy, design: .rounded))
-                            .foregroundColor(AppColors.levBlue)
+                            .font(.system(size: 36, weight: .heavy, design: .rounded))
+                            .foregroundColor(accentColor)
+                            .minimumScaleFactor(0.5)
+                            .lineLimit(1)
                         
-                        Text("Carbon Points")
+                        Text("Pts")
                             .font(.caption)
                             .fontWeight(.bold)
-                            .foregroundColor(.gray)
+                            .foregroundColor(secondaryText)
                     }
                 }
                 
                 // Métricas Secundárias
                 HStack(spacing: 0) {
-                    metricItem(title: "Tempo", value: trackingVM.formattedDuration)
-                    Divider().frame(height: 30)
-                    metricItem(title: "Distância", value: String(format: "%.2f km", trackingVM.distanceInKm))
-                    Divider().frame(height: 30)
-                    
-                    // Cálculo de velocidade média
                     let hours = trackingVM.durationInSeconds / 3600.0
                     let avgSpeed = hours > 0 ? (trackingVM.distanceInKm / hours) : 0.0
-                    metricItem(title: "Média", value: String(format: "%.1f km/h", avgSpeed))
+                    
+                    metricItem(title: "Tempo", value: trackingVM.formattedDuration, primary: primaryText, secondary: secondaryText)
+                    Divider().frame(height: 30).background(secondaryText.opacity(0.3))
+                    metricItem(title: "Distância", value: String(format: "%.2f km", trackingVM.distanceInKm), primary: primaryText, secondary: secondaryText)
+                    Divider().frame(height: 30).background(secondaryText.opacity(0.3))
+                    metricItem(title: "Média", value: String(format: "%.1f km/h", avgSpeed), primary: primaryText, secondary: secondaryText)
                 }
                 
                 // MARK: - 3. Controlos de Ação
@@ -131,18 +144,19 @@ struct TrackingRecordView: View {
                     if trackingVM.currentState == .idle {
                         // Botão Iniciar Gigante
                         Button(action: {
-                            withAnimation(.spring()) {
+                            withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) {
                                 toggleTrackingState()
                             }
                         }) {
                             Text("Iniciar Pedalada")
                                 .font(.title3)
-                                .fontWeight(.bold)
-                                .foregroundColor(AppColors.levBlue)
+                                .fontWeight(.black)
+                                .foregroundColor(isDark ? .black : .white)
                                 .frame(maxWidth: .infinity)
-                                .padding(.vertical, 16)
-                                .background(AppColors.neonGreen)
-                                .cornerRadius(16)
+                                .padding(.vertical, 18)
+                                .background(playButtonColor)
+                                .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+                                .shadow(color: playButtonColor.opacity(0.4), radius: 10, x: 0, y: 5)
                         }
                     } else {
                         // Botão Play/Pause
@@ -153,15 +167,16 @@ struct TrackingRecordView: View {
                         }) {
                             Image(systemName: trackingVM.currentState == .tracking ? "pause.fill" : "play.fill")
                                 .font(.title)
-                                .foregroundColor(.white)
-                                .frame(width: 70, height: 70)
-                                .background(trackingVM.currentState == .tracking ? Color.orange : AppColors.neonGreen)
+                                .foregroundColor(isDark ? .black : .white)
+                                .frame(width: 75, height: 75)
+                                .background(trackingVM.currentState == .tracking ? Color.orange : playButtonColor)
                                 .clipShape(Circle())
+                                .shadow(color: (trackingVM.currentState == .tracking ? Color.orange : playButtonColor).opacity(0.4), radius: 10, x: 0, y: 5)
                         }
                         
                         Spacer()
                         
-                        // Botão Finalizar (Segurar 4 segundos)
+                        // Botão Finalizar (O seu HoldToFinish original!)
                         HoldToFinishButton {
                             Task {
                                 await trackingVM.finishRide(localContext: modelContext, currentUser: homeVM.currentUser)
@@ -171,22 +186,21 @@ struct TrackingRecordView: View {
                 }
                 .padding(.top, 10)
             }
-            .alert("Falta pouco!", isPresented: $bindableVM.showNameRequiredAlert) {
-                        Button("Entendido", role: .cancel) { }
-                    } message: {
-                        Text("Para iniciarmos o rastreio e contabilizar os seus pontos no Ranking, por favor, vá à aba 'Perfil' e adicione o seu nome.")
-                    }
-            
-            .padding(24)
-            .background(
-                RoundedRectangle(cornerRadius: 32)
-                    .fill(Color(UIColor.systemBackground).opacity(0.95))
-                    .shadow(color: .black.opacity(0.15), radius: 20, y: -5)
-            )
+            .padding(28)
+            .background(panelBg)
+            // Canto e Sombra ao estilo Apple Maps flutuante
+            .clipShape(RoundedRectangle(cornerRadius: 36, style: .continuous))
+            .shadow(color: Color.black.opacity(isDark ? 0.4 : 0.1), radius: 20, y: -5)
             .padding(.horizontal, 16)
             .padding(.bottom, 30) // Respiro para a TabBar
+            
+            // ALERTAS (Mantidos exatamente iguais)
+            .alert("Falta pouco!", isPresented: $bindableVM.showNameRequiredAlert) {
+                Button("Entendido", role: .cancel) { }
+            } message: {
+                Text("Para iniciarmos o rastreio e contabilizar os seus pontos no Ranking, por favor, vá à aba 'Perfil' e adicione o seu nome.")
+            }
         }
-        // 🔥 ALERTA DE SEGURANÇA E PERMISSÕES (Mantido intocável)
         .alert(isPresented: $showErrorAlert) {
             Alert(
                 title: Text("Ação Necessária"),
@@ -195,25 +209,25 @@ struct TrackingRecordView: View {
             )
         }
         .onAppear {
-            // Garante que o mapa foca no utilizador e pede permissão
             CLLocationManager().requestWhenInUseAuthorization()
             AnalyticsManager.shared.trackScreen("Tracking_Record_Screen")
         }
     }
     
-    // MARK: - Componentes Visuais Auxiliares
-    
+    // MARK: - Componente Auxiliar de Métrica (Responsivo)
     @ViewBuilder
-    private func metricItem(title: String, value: String) -> some View {
-        VStack(spacing: 4) {
+    private func metricItem(title: String, value: String, primary: Color, secondary: Color) -> some View {
+        VStack(spacing: 2) {
             Text(value)
-                .font(.headline)
-                .fontWeight(.bold)
-                .foregroundColor(.black)
+                .font(.system(size: 18, weight: .heavy, design: .rounded))
+                .foregroundColor(primary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.6)
             
             Text(title)
-                .font(.caption)
-                .foregroundColor(.gray)
+                .font(.caption2)
+                .fontWeight(.semibold)
+                .foregroundColor(secondary)
         }
         .frame(maxWidth: .infinity)
     }

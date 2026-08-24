@@ -2,13 +2,12 @@ import SwiftUI
 import SwiftData
 
 struct BenefitsGalleryView: View {
-
-    
     @Environment(\.modelContext) private var modelContext
-    @Environment(\.dismiss) private var dismiss // Para voltar atrás se necessário
-    
+    @Environment(\.dismiss) private var dismiss
     
     @Bindable var homeVM: HomeViewModel
+    
+    @Environment(\.colorScheme) var colorScheme
   
     @State private var showRedeemAlert = false
     @State private var alertMessage = ""
@@ -19,9 +18,18 @@ struct BenefitsGalleryView: View {
     }
     
     var body: some View {
+        let isDark = colorScheme == .dark
+        let neonGreen = Color(red: 0.82, green: 1.0, blue: 0.2)
+        
+        let bgApp = isDark ? Color("LevGreenDark") : AppColors.levGreenBg
+        let primaryText = isDark ? Color.white : .black
+        let secondaryText = isDark ? Color.white.opacity(0.6) : .black.opacity(0.6)
+        let accentColor = isDark ? neonGreen : AppColors.levBlue
+        
         ZStack {
-            AppColors.levGreenBg.ignoresSafeArea()
+            bgApp.ignoresSafeArea()
             
+            // MARK: - Conteúdo Principal (Com Blur)
             ScrollView(showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 24) {
                     
@@ -30,26 +38,31 @@ struct BenefitsGalleryView: View {
                         Text("Seus Carbon Points")
                             .font(.subheadline)
                             .fontWeight(.bold)
-                            .foregroundColor(.black.opacity(0.6))
+                            .foregroundColor(secondaryText)
                         
                         HStack {
                             Image(systemName: "leaf.circle.fill")
-                                .foregroundColor(.green)
+                                .foregroundColor(isDark ? neonGreen : .green)
                             Text("\(currentPoints)")
-                                .font(.system(size: 36, weight: .black, design: .rounded))
-                                .foregroundColor(.black)
+                                .font(.system(size: 42, weight: .black, design: .rounded))
+                                .foregroundColor(primaryText)
+                                .minimumScaleFactor(0.5)
+                                .lineLimit(1)
                         }
                         
                         Text("Continue a pedalar para desbloquear mais benefícios exclusivos.")
                             .font(.caption)
-                            .foregroundColor(.black.opacity(0.7))
+                            .fontWeight(.medium)
+                            .foregroundColor(secondaryText)
                             .padding(.top, 4)
+                            .fixedSize(horizontal: false, vertical: true)
                     }
                     .padding(.horizontal, 24)
                     .padding(.top, 20)
                     
-                    // Lista de Cupões
+                    // Lista de Cupões Mockados
                     VStack(spacing: 16) {
+                        // Como os dados reais vão entrar aqui no futuro, o layout já está blindado.
                         ForEach(availableCoupons) { coupon in
                             couponCard(coupon: coupon)
                         }
@@ -58,128 +71,128 @@ struct BenefitsGalleryView: View {
                     .padding(.bottom, 40)
                 }
             }
+            .blur(radius: 5) // 🔥 EFEITO BLUR
+            .disabled(true)  // 🔥 BLOQUEIA CLIQUES ENQUANTO ESTÁ "EM BREVE"
+            
+            // MARK: - FITA ZEBRADA SOBREPOSTA
+            ConstructionTapeView()
+                .ignoresSafeArea()
         }
         .navigationTitle("Benefícios")
         .navigationBarTitleDisplayMode(.inline)
-        // Alerta Interativo de Confirmação/Erro
-        .alert("Resgatar Benefício", isPresented: $showErrorAlert) {
-            if let coupon = selectedCoupon, currentPoints >= coupon.costInPoints {
-                Button("Cancelar", role: .cancel) { }
-                Button("Confirmar Resgate") {
-                    redeem(coupon: coupon)
-                    
-                    // 📊 Rastreio da Ação
-                    AnalyticsManager.shared.trackEvent("Coupon_Redeemed", properties: [
-                        "company": coupon.company,
-                        "cost": coupon.costInPoints
-                    ])
-                }
-            } else {
-                Button("Entendi", role: .cancel) { }
-            }
-        } message: {
-            Text(alertMessage)
-        }
         .onAppear {
-            AnalyticsManager.shared.trackScreen("Benefits_Gallery")
+            AnalyticsManager.shared.trackScreen("Benefits_Gallery_ComingSoon")
         }
     }
     
     // MARK: - Design do Cupão Individual
     @ViewBuilder
     private func couponCard(coupon: PartnerCoupon) -> some View {
+        let isDark = colorScheme == .dark
+        let deepDark = Color(red: 0.08, green: 0.08, blue: 0.1)
+        let neonGreen = Color(red: 0.82, green: 1.0, blue: 0.2)
+        
+        let cardBg = isDark ? deepDark : .white
+        let primaryText = isDark ? Color.white : .black
+        let secondaryText = isDark ? Color.white.opacity(0.6) : .gray
+        let accentColor = isDark ? neonGreen : AppColors.levBlue
         let canAfford = currentPoints >= coupon.costInPoints
         
         HStack(spacing: 16) {
-            // Logotipo da Empresa / Ícone
             ZStack {
-                RoundedRectangle(cornerRadius: 16)
+                RoundedRectangle(cornerRadius: 18, style: .continuous)
                     .fill(coupon.brandColor.opacity(0.15))
                     .frame(width: 70, height: 70)
-                
                 Image(systemName: coupon.iconName)
                     .font(.system(size: 30))
                     .foregroundColor(coupon.brandColor)
             }
             
-            // Informações
             VStack(alignment: .leading, spacing: 4) {
                 Text(coupon.company)
                     .font(.caption)
                     .fontWeight(.bold)
-                    .foregroundColor(.gray)
+                    .foregroundColor(secondaryText)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
                 
                 Text(coupon.offer)
                     .font(.headline)
                     .fontWeight(.black)
-                    .foregroundColor(.black)
+                    .foregroundColor(primaryText)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
                 
                 Text(coupon.description)
                     .font(.caption2)
-                    .foregroundColor(.gray)
+                    .foregroundColor(secondaryText)
                     .lineLimit(2)
             }
-            
             Spacer()
             
-            // Botão de Custo / Ação
-            Button(action: {
-                handleTap(on: coupon)
-            }) {
-                VStack(spacing: 2) {
+            Button(action: {}) {
+                VStack(spacing: 4) {
                     Image(systemName: canAfford ? "lock.open.fill" : "lock.fill")
                         .font(.caption2)
                     Text("\(coupon.costInPoints) pts")
-                        .font(.caption)
-                        .fontWeight(.bold)
+                        .font(.system(size: 12, weight: .heavy, design: .rounded))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
                 }
-                .foregroundColor(.white)
-                .padding(.vertical, 8)
-                .padding(.horizontal, 12)
-                .background(canAfford ? AppColors.levBlue : Color.gray.opacity(0.5))
-                .cornerRadius(12)
+                .foregroundColor(canAfford ? (isDark ? .black : .white) : primaryText)
+                .padding(.vertical, 10)
+                .padding(.horizontal, 14)
+                .background(canAfford ? accentColor : Color.gray.opacity(isDark ? 0.3 : 0.15))
+                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
             }
         }
-        .padding(16)
-        .background(Color(UIColor.systemBackground))
-        .cornerRadius(20)
-        .shadow(color: Color.black.opacity(0.05), radius: 8, x: 0, y: 4)
-        // Efeito visual de inativo se não tiver pontos suficientes
-        .opacity(canAfford ? 1.0 : 0.7)
+        .padding(20)
+        .background(cardBg)
+        .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+        .shadow(color: Color.black.opacity(isDark ? 0.3 : 0.04), radius: 12, x: 0, y: 6)
+        .opacity(canAfford ? 1.0 : 0.6)
     }
-    
-    // Estado do alerta partilhado
-    @State private var showErrorAlert = false
-    
-    // MARK: - Lógica de Resgate
-    private func handleTap(on coupon: PartnerCoupon) {
-        selectedCoupon = coupon
-        
-        if currentPoints >= coupon.costInPoints {
-            alertMessage = "Deseja usar \(coupon.costInPoints) pontos para resgatar o benefício '\(coupon.offer)' na \(coupon.company)?"
-        } else {
-            let missing = coupon.costInPoints - currentPoints
-            alertMessage = "Faltam \(missing) pontos. Continue a pedalar e a poupar CO₂ para desbloquear este benefício!"
-        }
-        
-        showErrorAlert = true
-    }
-    
-    private func redeem(coupon: PartnerCoupon) {
-            // 🔥 Integração em tempo real com o SwiftData!
-            if let user = homeVM.currentUser {
-                withAnimation {
-                    user.spendableCarbonPoints -= coupon.costInPoints
-                }
-                
-                do {
-                    try modelContext.save()
-                    print("🎉 Cupão da \(coupon.company) resgatado e pontos deduzidos com sucesso!")
-                } catch {
-                    print("❌ Erro ao deduzir pontos: \(error.localizedDescription)")
+}
+
+// MARK: - COMPONENTE: Fita Zebrada "Em Breve"
+struct ConstructionTapeView: View {
+    var body: some View {
+        ZStack {
+            // Fundo Amarelo Forte
+            Color(red: 1.0, green: 0.85, blue: 0.0)
+            
+            // Listras Diagonais Pretas desenhadas com SwiftUI Puro!
+            HStack(spacing: 20) {
+                ForEach(0..<60, id: \.self) { _ in
+                    Rectangle()
+                        .fill(Color.black.opacity(0.85))
+                        .frame(width: 7)
+                        .rotationEffect(.degrees(30)) // Inclinação da listra
+                        .scaleEffect(1.5) // Para cobrir as pontas vazias
                 }
             }
+            
+            // O Texto Sobreposto
+            Text("EM BREVE")
+                .font(.system(size: 38, weight: .black, design: .rounded))
+                .foregroundColor(Color(red: 1.0, green: 0.85, blue: 0.0)) // Letra Amarela
+                .padding(.horizontal, 20)
+                .padding(.vertical, 4)
+                .background(Color.black) // Fundo Preto para saltar da fita
+                .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
         }
-        
+        .frame(width: 1000, height: 75) // Uma largura absurda para não cortar as pontas ao girar
+        .clipped()
+        // A inclinação da fita no ecrã (Do canto superior esquerdo para o inferior direito)
+        .rotationEffect(.degrees(45))
+        .shadow(color: .black.opacity(0.3), radius: 20, x: 0, y: 10)
+    }
+}
+
+// MARK: - Previews
+#Preview {
+    BenefitsGalleryView(homeVM: HomeViewModel())
+        .modelContainer(for: LocalRide.self, inMemory: true)
+
 }
 
