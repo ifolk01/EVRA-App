@@ -295,11 +295,12 @@ struct DashboardGoalCard: View {
 
 
 struct ProfilePreferencesSection: View {
+    @Environment(\.colorScheme) var colorScheme
+    
     @Binding var substitutedVehicle: SubstitutedVehicle
     @Binding var bikeSerialNumber: String
     
-    // 🔥 Agora usamos um Set<String> para gerir múltiplas seleções de forma super rápida e sem duplicados
-    @Binding var routes: Set<String> // 🔥 Mudou de usualRoutes para routes
+    @Binding var routes: Set<String>
     var onSave: (String, Bool) -> Void
     
     @Namespace private var animation
@@ -313,39 +314,58 @@ struct ProfilePreferencesSection: View {
     ]
     
     let routeOptions = ["Trabalho", "Faculdade", "Lazer", "Academia", "Mercado"]
-    
-    // Configuração da grelha adaptável para os chips de trajeto
     let gridColumns = [GridItem(.adaptive(minimum: 100, maximum: 140), spacing: 10)]
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 24) {
+        let isDark = colorScheme == .dark
+        let deepDark = Color(red: 0.08, green: 0.08, blue: 0.1)
+        let neonGreen = Color(red: 0.82, green: 1.0, blue: 0.2)
+        
+        let cardBg = isDark ? deepDark : .white
+        let primaryText = isDark ? Color.white : .black
+        let secondaryText = isDark ? Color.white.opacity(0.6) : .gray
+        let accentColor = isDark ? neonGreen : AppColors.levBlue
+        let activeText = isDark ? Color.black : Color.white
+        let inactiveBg = Color.gray.opacity(isDark ? 0.3 : 0.15)
+        
+        VStack(alignment: .leading, spacing: 28) {
             Text("Preferências de Mobilidade")
-                .font(.headline)
-                .foregroundColor(.black)
+                .font(.title3)
+                .fontWeight(.bold)
+                .foregroundColor(primaryText)
+                .lineLimit(1)
+                .minimumScaleFactor(0.8) // Proteção responsiva
             
             // 1. Veículo a ser substituído (Cápsulas Deslizantes)
-            VStack(alignment: .leading, spacing: 10) {
+            VStack(alignment: .leading, spacing: 12) {
                 Text("Veículo Habitual Substituído")
                     .font(.subheadline)
-                    .foregroundColor(.gray)
+                    .fontWeight(.semibold)
+                    .foregroundColor(secondaryText)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8) // Proteção responsiva
                 
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 8) {
                         ForEach(vehicleOptions, id: \.value) { option in
+                            let isSelected = substitutedVehicle == option.value
+                            
                             Text(option.label)
                                 .font(.subheadline)
                                 .fontWeight(.bold)
-                                .padding(.vertical, 8)
+                                .foregroundColor(isSelected ? activeText : secondaryText)
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.8) // Garante que o texto cabe na cápsula
+                                .padding(.vertical, 10)
                                 .padding(.horizontal, 16)
-                                .foregroundColor(substitutedVehicle == option.value ? .white : .black.opacity(0.7))
                                 .background(
                                     ZStack {
                                         Capsule()
-                                            .fill(Color.gray.opacity(0.15))
+                                            .fill(inactiveBg)
                                         
-                                        if substitutedVehicle == option.value {
+                                        if isSelected {
                                             Capsule()
-                                                .fill(AppColors.levBlue)
+                                                .fill(accentColor)
                                                 .matchedGeometryEffect(id: "VEHICLE_TAB", in: animation)
                                         }
                                     }
@@ -364,11 +384,14 @@ struct ProfilePreferencesSection: View {
                 }
             }
             
-            // 2. Trajetos Habituais (NOVO DESIGN COM CHIPS MÚLTIPLOS)
+            // 2. Trajetos Habituais (Chips Múltiplos)
             VStack(alignment: .leading, spacing: 12) {
                 Text("Trajetos Habituais / Frequentes")
                     .font(.subheadline)
-                    .foregroundColor(.gray)
+                    .fontWeight(.semibold)
+                    .foregroundColor(secondaryText)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8) // Proteção responsiva
                 
                 LazyVGrid(columns: gridColumns, alignment: .leading, spacing: 12) {
                     ForEach(routeOptions, id: \.self) { route in
@@ -380,24 +403,25 @@ struct ProfilePreferencesSection: View {
                             Text(route)
                                 .font(.caption)
                                 .fontWeight(.bold)
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.8) // Proteção responsiva
                         }
                         .padding(.vertical, 10)
                         .padding(.horizontal, 12)
                         .frame(maxWidth: .infinity, alignment: .center)
-                        .foregroundColor(isSelected ? .white : .black.opacity(0.7))
+                        .foregroundColor(isSelected ? activeText : secondaryText)
                         .background(
                             Capsule()
-                                .fill(isSelected ? AppColors.levBlue : Color.gray.opacity(0.15))
+                                .fill(isSelected ? accentColor : inactiveBg)
                         )
-                        // Animação de seleção e remoção
                         .onTapGesture {
                             withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
                                 if isSelected {
                                     routes.remove(route)
                                 } else {
                                     routes.insert(route)
-                                }                            }
-                            // Salva silenciosamente sempre que adiciona ou remove um trajeto
+                                }
+                            }
                             onSave("", false)
                         }
                     }
@@ -405,35 +429,43 @@ struct ProfilePreferencesSection: View {
             }
             
             // 3. Série da Bicicleta
-            VStack(alignment: .leading, spacing: 10) {
+            VStack(alignment: .leading, spacing: 12) {
                 Text("Número de Série da E-Bike")
                     .font(.subheadline)
-                    .foregroundColor(.gray)
+                    .fontWeight(.semibold)
+                    .foregroundColor(secondaryText)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8) // Proteção responsiva
                 
-                HStack {
+                HStack(spacing: 12) {
                     TextField("Ex: QWD-2026-9812", text: $bikeSerialNumber)
-                        .textFieldStyle(RoundedBorderTextFieldStyle())
+                        .padding(12)
+                        .background(isDark ? Color.white.opacity(0.1) : Color(.systemGray6))
+                        .cornerRadius(12)
+                        .foregroundColor(primaryText) // 🔥 Texto acompanha o tema (branco no Dark, preto no Light)
+                        .accentColor(accentColor) // A cor do cursor a piscar
                     
                     Button(action: {
                         onSave("Número de série da E-Bike atualizado com sucesso!", true)
                     }) {
                         Text("Salvar")
-                            .font(.caption)
+                            .font(.subheadline)
                             .fontWeight(.bold)
-                            .foregroundColor(.white)
-                            .padding(.horizontal, 16)
-                            .padding(.vertical, 10)
-                            .background(AppColors.levBlue)
-                            .cornerRadius(10)
+                            .foregroundColor(activeText)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.8)
+                            .padding(.horizontal, 20)
+                            .padding(.vertical, 12)
+                            .background(accentColor)
+                            .cornerRadius(12)
                     }
                 }
             }
-            
-            
         }
         .padding(24)
-        .background(Color(UIColor.systemBackground))
-        .cornerRadius(24)
+        .background(cardBg)
+        .clipShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
+        .shadow(color: Color.black.opacity(isDark ? 0.3 : 0.04), radius: 15, x: 0, y: 8)
     }
 }
 
