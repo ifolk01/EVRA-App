@@ -18,7 +18,12 @@ PRIVATE_KEY_STR = os.environ.get("CLOUDKIT_PRIVATE_KEY")
 
 def generate_signature(date_str, payload_str, path):
     """Gera a assinatura criptográfica exigida pela Apple (ECDSA)"""
-    private_key = ecdsa.SigningKey.from_pem(PRIVATE_KEY_STR)
+    
+    # 🔥 O TRUQUE: Normalizamos o cabeçalho em tempo real para a biblioteca não reclamar
+    normalized_key = PRIVATE_KEY_STR.replace("BEGIN EC PRIVATE KEY", "BEGIN PRIVATE KEY")
+    normalized_key = normalized_key.replace("END EC PRIVATE KEY", "END PRIVATE KEY")
+    
+    private_key = ecdsa.SigningKey.from_pem(normalized_key)
     
     body_hash = hashlib.sha256(payload_str.encode('utf-8')).digest()
     body_base64 = base64.b64encode(body_hash).decode('utf-8')
