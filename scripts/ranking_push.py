@@ -51,7 +51,7 @@ def get_top_3_users():
     path = f"/database/1/{CONTAINER}/{ENVIRONMENT}/public/records/query"
     
     # Query procurando a tabela LevUser e ordenando do maior para o menor
-   payload = {
+    payload = {
         "query": {
             "recordType": "LevUser",
             "sortBy": [{"fieldName": "totalCarbonPoints", "ascending": False}]
