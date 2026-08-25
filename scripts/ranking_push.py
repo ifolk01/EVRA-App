@@ -13,7 +13,7 @@ import math
 
 # Configurações do seu CloudKit
 CONTAINER = "iCloud.filipecunha.dev.EVRA"
-ENVIRONMENT = "development"
+ENVIRONMENT = "production"
 KEY_ID = os.environ.get("CLOUDKIT_KEY_ID")
 PRIVATE_KEY_STR = os.environ.get("CLOUDKIT_PRIVATE_KEY")
 
