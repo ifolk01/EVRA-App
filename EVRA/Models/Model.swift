@@ -7,7 +7,7 @@
 
 import Foundation
 import SwiftData
-
+import CoreLocation
 
 
 struct Ride: Identifiable, Codable {
@@ -18,6 +18,11 @@ struct Ride: Identifiable, Codable {
     var co2Avoided: Double // gramas
     var earnedPoints: Int
     var date: Date
+}
+
+struct RouteCoordinate: Codable {
+    var latitude: Double
+    var longitude: Double
 }
 
 /// Modelo local para guardar viagens quando o telemóvel está offline.
@@ -33,16 +38,18 @@ class LocalRide {
     var duration: TimeInterval = 0.0 // segundos
     var co2Avoided: Double = 0.0 // gramas
     var date: Date = Date()
+    var route: [RouteCoordinate] = []
     
     // O grande segredo para o modo offline!
     var isSyncedToCloud: Bool = false
     
-    init(id: UUID = UUID(), distance: Double, duration: TimeInterval, co2Avoided: Double, date: Date = Date(), isSyncedToCloud: Bool = false,userAppleID: String) {
+    init(id: UUID = UUID(), distance: Double, duration: TimeInterval, co2Avoided: Double, date: Date = Date(),route: [RouteCoordinate] = [], isSyncedToCloud: Bool = false,userAppleID: String) {
         self.id = id
         self.distance = distance
         self.duration = duration
         self.co2Avoided = co2Avoided
         self.date = date
+        self.route = route
         self.isSyncedToCloud = isSyncedToCloud
         self.userAppleID = userAppleID
     }

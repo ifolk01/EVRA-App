@@ -37,7 +37,7 @@ class AppRouter {
     
     // O estado atual do aplicativo. Começamos na splash screen enquanto checamos o banco.
     var currentState: AppState = .splash
-    
+    var showActiveTracking: Bool = false
     // O caminho de navegação atual do Onboarding.
     // Uma array vazia significa que estamos na raiz (primeira tela).
      var onboardingPath = NavigationPath()

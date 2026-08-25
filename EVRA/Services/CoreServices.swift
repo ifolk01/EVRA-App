@@ -108,6 +108,37 @@ class CloudKitService {
             throw CloudKitError.failedToSave
         }
     }
+    func subscribeToWeeklyRankingPush() async throws {
+        let publicDB = CKContainer.default().publicCloudDatabase
+        let subscriptionID = "weekly-ranking-announcement"
+        
+        // Verifica se já está subscrito para não criar duplicados
+        if let _ = try? await publicDB.subscription(for: subscriptionID) {
+            print("Já subscrito para notificações do Ranking.")
+            return
+        }
+        
+        // O Gatilho: Quando um registo "RankingAnnouncement" for CRIADO
+        let predicate = NSPredicate(value: true)
+        let subscription = CKQuerySubscription(
+            recordType: "RankingAnnouncement",
+            predicate: predicate,
+            subscriptionID: subscriptionID,
+            options: [.firesOnRecordCreation]
+        )
+        
+        // O Visual da Notificação Push
+        let notificationInfo = CKSubscription.NotificationInfo()
+        notificationInfo.alertLocalizationKey = "%1$@" // Lê a string da nuvem
+        notificationInfo.alertLocalizationArgs = ["messageText"] // O nome do campo que vamos criar em Python
+        notificationInfo.shouldBadge = true
+        notificationInfo.soundName = "default"
+        
+        subscription.notificationInfo = notificationInfo
+        
+        try await publicDB.save(subscription)
+        print("☁️ Subscrição de Pushes ativada com sucesso!")
+    }
 }
 
 
@@ -122,6 +153,8 @@ class TrackingService: NSObject, CLLocationManagerDelegate {
     private let locationManager = CLLocationManager()
     private let motionManager = CMMotionActivityManager()
    
+    var routeCoordinates: [RouteCoordinate] = []
+    
     // Estados reativos (Lidos pelas ViewModels/Live Activities)
     var isTrackingActive: Bool = false
     var currentSpeed: Double = 0.0
@@ -161,6 +194,7 @@ class TrackingService: NSObject, CLLocationManagerDelegate {
         currentDistance = 0.0
         isTrackingActive = true
         locationManager.startUpdatingLocation()
+        routeCoordinates.removeAll()
         
         // Inicia a captura do coprocessador de movimento (Acelerômetro)
         if CMMotionActivityManager.isActivityAvailable() {
@@ -236,7 +270,11 @@ class TrackingService: NSObject, CLLocationManagerDelegate {
                 // Só guarda e atualiza se passar na velocidade máxima
                 onDistanceUpdate?(self.currentDistance)
             }
-            
+        for location in locations {
+                    let newPoint = RouteCoordinate(latitude: location.coordinate.latitude, longitude: location.coordinate.longitude)
+                    routeCoordinates.append(newPoint)
+                }
+        
             lastLocation = location
         }
     

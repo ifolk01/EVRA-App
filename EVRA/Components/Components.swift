@@ -543,32 +543,63 @@ struct DashboardBenefitsLinkCard: View {
 
 /// Banner flutuante quando há uma viagem em andamento
 struct ActiveTrackingBanner: View {
+    @Environment(\.colorScheme) var colorScheme
+    @Environment(AppRouter.self) private var router // 🔥 Injetamos o router para o clique funcionar
+    
     var durationText: String
-    var isBlinking: Bool
+    var isTracking: Bool // 🔥 Renomeado para ser mais óbvio
     
     var body: some View {
-        HStack {
-            VStack(alignment: .leading) {
-                Text("A rastrear trajeto...")
-                    .font(.caption)
-                    .foregroundColor(AppColors.levBlue)
-                Text("Tempo: \(durationText)")
-                    .font(.headline)
+        let isDark = colorScheme == .dark
+        let deepDark = Color(red: 0.08, green: 0.08, blue: 0.1)
+        
+        let cardBg = isDark ? deepDark : .white
+        let primaryText = isDark ? Color.white : .black
+        let secondaryText = isDark ? Color.white.opacity(0.6) : .gray
+        let accentColor = isDark ? AppColors.neonGreen : AppColors.levBlue
+        
+        // 🔥 Transformamos tudo num botão
+        Button(action: {
+            router.showActiveTracking = true
+        }) {
+            HStack(spacing: 16) {
+                ZStack {
+                    Circle()
+                        .fill(accentColor.opacity(0.15))
+                        .frame(width: 44, height: 44)
+                    
+                    Image(systemName: "bicycle")
+                        .font(.system(size: 20, weight: .bold))
+                        .foregroundColor(accentColor)
+                        .opacity(isTracking ? 1.0 : 0.3)
+                        .animation(isTracking ? .easeInOut(duration: 0.8).repeatForever(autoreverses: true) : .default, value: isTracking)
+                }
+                
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(isTracking ? "Pedalada em andamento" : "Pedalada pausada")
+                        .font(.subheadline)
+                        .fontWeight(.bold)
+                        .foregroundColor(primaryText)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
+                    
+                    Text(durationText)
+                        .font(.system(size: 14, weight: .heavy, design: .rounded))
+                        .foregroundColor(secondaryText)
+                }
+                
+                Spacer()
+                
+                Image(systemName: "chevron.right")
+                    .foregroundColor(secondaryText.opacity(0.5))
+                    .font(.system(size: 14, weight: .bold))
             }
-            Spacer()
-            Circle()
-                .fill(Color.red)
-                .frame(width: 10, height: 10)
-                .opacity(isBlinking ? 1 : 0)
-                .animation(.easeInOut(duration: 0.5), value: isBlinking)
+            .padding(16)
+            .background(cardBg)
+            .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+            .shadow(color: Color.black.opacity(isDark ? 0.3 : 0.04), radius: 10, x: 0, y: 5)
         }
-        .padding()
-        .background(Color.white)
-        .cornerRadius(15)
-        .overlay(
-            RoundedRectangle(cornerRadius: 15)
-                .stroke(AppColors.levBlue, lineWidth: 2)
-        )
+        .buttonStyle(PlainButtonStyle()) // 🔥 Impede que o botão fique com aquele "piscar" azul nativo do iOS
     }
 }
 

@@ -51,6 +51,14 @@ struct RootView: View {
                 MainTabView(homeVM: homeVM, trackingVM: trackingVM)
             }
         }
+        .onOpenURL { url in
+                    if url.absoluteString == "velos://tracking" {
+                        // 1. Garante que o utilizador vai para a área principal do app
+                        router.currentState = .main
+                        // 2. Dispara o gatilho para abrir o ecrã de Tracking
+                        router.showActiveTracking = true
+                    }
+                }
         .onChange(of: onboardingVM.isRegistrationComplete) { _, newValue in
             if newValue {
                 // O utilizador acabou de se registrar! Usamos a memória local instantânea.

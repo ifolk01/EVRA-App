@@ -38,7 +38,7 @@ struct HomeDashboardView: View {
                         
                         ActiveTrackingBanner(
                             durationText: trackingVM.formattedDuration,
-                            isBlinking: trackingVM.durationInSeconds.truncatingRemainder(dividingBy: 2) == 0
+                            isTracking: trackingVM.currentState == .tracking 
                         )
                     }
                     

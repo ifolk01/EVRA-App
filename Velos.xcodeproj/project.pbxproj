@@ -87,6 +87,16 @@
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
+		9BA90FAE303D32090079BC46 /* scripts */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = scripts;
+			sourceTree = "<group>";
+		};
+		9BA90FB2303D32930079BC46 /* .github */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = .github;
+			sourceTree = "<group>";
+		};
 		9BF02C892FFD57700090A62D /* EVRA */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
@@ -154,6 +164,8 @@
 		9BF02C7E2FFD57700090A62D = {
 			isa = PBXGroup;
 			children = (
+				9BA90FB2303D32930079BC46 /* .github */,
+				9BA90FAE303D32090079BC46 /* scripts */,
 				9BF02C892FFD57700090A62D /* EVRA */,
 				9BF02C972FFD57720090A62D /* EVRATests */,
 				9BF02CA12FFD57720090A62D /* EVRAUITests */,
@@ -225,6 +237,8 @@
 				9BF02C962FFD57720090A62D /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
+				9BA90FAE303D32090079BC46 /* scripts */,
+				9BA90FB2303D32930079BC46 /* .github */,
 				9BF02C972FFD57720090A62D /* EVRATests */,
 			);
 			name = EVRATests;
