@@ -1,9 +1,8 @@
+# ranking.yml
+# Velos
 #
-//  ranking.yml
-//  Velos
-//
-//  Created by Filipe Pinto Cunha on 24/08/26.
-//
+# Created by Filipe Pinto Cunha on 24/08/26.
+
 name: Disparo Semanal do Ranking
 
 on:
