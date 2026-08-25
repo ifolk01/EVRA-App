@@ -90,7 +90,7 @@ def send_ranking_push():
     # 3. Máquina de Estados da Mensagem
     if week_number == 1:
         # Primeira semana: Foco na motivação de arranque
-        message_text = "Novo mês, novo ranking no Velos! As pontuações estão a zeros. Quem vai dominar as ruas de bicicleta esta semana?"
+        message_text = "Novo mês, novo ranking no Velos! As pontuações estão zeradas. Quem vai dominar as ruas de bicicleta esta semana?"
         
     else:
         # Monta a string de quem está a ganhar
@@ -103,10 +103,10 @@ def send_ranking_push():
 
         if week_number >= 4:
             # Últimas semanas do mês: Foco na urgência
-            message_text = f"Reta final do mês! {ranking_str}. Vai ficar para trás? Pega na bicicleta!"
+            message_text = f"Reta final do mês! Ranking: {ranking_str}. Vai ficar para trás?"
         else:
             # Meio do mês: Foco na competição
-            message_text = f"O ranking está a aquecer! {ranking_str}. Consegues apanhá-los?"
+            message_text = f"O ranking está aquecendo! {ranking_str}. Consegues alcançá-los?"
             
     print(f"Mensagem gerada: {message_text}")
     
