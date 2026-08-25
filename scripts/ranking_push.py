@@ -50,7 +50,6 @@ def get_top_3_users():
     """Busca os 3 utilizadores com mais pontos no Banco de Dados Público"""
     path = f"/database/1/{CONTAINER}/{ENVIRONMENT}/public/records/query"
     
-    # Query procurando a tabela LevUser e ordenando do maior para o menor
     payload = {
         "query": {
             "recordType": "LevUser",
@@ -65,9 +64,16 @@ def get_top_3_users():
         records = response.json().get("records", [])
         top_users = []
         for r in records:
-            name = r.get("fields", {}).get("name", {}).get("value", "Ciclista")
+            # 1. Pega o nome completo que vem da Apple
+            full_name = r.get("fields", {}).get("name", {}).get("value", "Ciclista")
+            
+            # 2. Fatiamos pelos espaços e guardamos só a primeira palavra
+            first_name = full_name.split()[0] if full_name else "Ciclista"
+            
+            # 3. Pega os pontos
             points = r.get("fields", {}).get("totalCarbonPoints", {}).get("value", 0)
-            top_users.append((name, points))
+            
+            top_users.append((first_name, points))
         return top_users
     else:
         print(f"Erro ao buscar ranking: {response.text}")
@@ -84,7 +90,7 @@ def send_ranking_push():
     # 3. Máquina de Estados da Mensagem
     if week_number == 1:
         # Primeira semana: Foco na motivação de arranque
-        message_text = "🏁 Novo mês, novo ranking no Velos! As pontuações estão a zeros. Quem vai dominar as ruas de bicicleta esta semana?"
+        message_text = "Novo mês, novo ranking no Velos! As pontuações estão a zeros. Quem vai dominar as ruas de bicicleta esta semana?"
         
     else:
         # Monta a string de quem está a ganhar
@@ -97,10 +103,10 @@ def send_ranking_push():
 
         if week_number >= 4:
             # Últimas semanas do mês: Foco na urgência
-            message_text = f"🏆 Reta final do mês! {ranking_str}. Vai ficar para trás? Pega na bicicleta!"
+            message_text = f"Reta final do mês! {ranking_str}. Vai ficar para trás? Pega na bicicleta!"
         else:
             # Meio do mês: Foco na competição
-            message_text = f"🔥 O ranking está a aquecer! {ranking_str}. Consegues apanhá-los?"
+            message_text = f"O ranking está a aquecer! {ranking_str}. Consegues apanhá-los?"
             
     print(f"Mensagem gerada: {message_text}")
     
