@@ -27,6 +27,7 @@ struct VelosApp: App {
     init() {
        
         AnalyticsManager.shared.setup()
+        UIApplication.shared.registerForRemoteNotifications()
     }
     
     var body: some Scene {

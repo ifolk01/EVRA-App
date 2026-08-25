@@ -1,6 +1,7 @@
 import SwiftUI
 import SwiftData
 internal import HealthKit
+import UserNotifications
 
 struct HomeDashboardView: View {
         @Environment(TrackingViewModel.self) private var trackingVM
@@ -107,6 +108,24 @@ struct HomeDashboardView: View {
             
                     AnalyticsManager.shared.trackScreen("Tab_Dashboard")
                 }
+        
+        .task {
+            do {
+                // 1. Pede permissão para mostrar Alertas, Sons e o Badge (número vermelho)
+                let center = UNUserNotificationCenter.current()
+                let granted = try await center.requestAuthorization(options: [.alert, .sound, .badge])
+                
+                if granted {
+                    print("🔔 Permissão de Push concedida!")
+                    // 2. Só subscreve ao CloudKit se o utilizador deixou
+                    try await CloudKitService().subscribeToWeeklyRankingPush()
+                } else {
+                    print("🔕 Utilizador recusou as notificações.")
+                }
+            } catch {
+                print("Erro ao configurar notificações: \(error)")
+            }
+        }
     }
     
     // MARK: - SECÇÕES LOCAIS DA INTERFACE
