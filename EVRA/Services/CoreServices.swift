@@ -108,6 +108,37 @@ class CloudKitService {
             throw CloudKitError.failedToSave
         }
     }
+    func subscribeToWeeklyRankingPush() async throws {
+        let publicDB = CKContainer.default().publicCloudDatabase
+        let subscriptionID = "weekly-ranking-announcement"
+        
+        // Verifica se já está subscrito para não criar duplicados
+        if let _ = try? await publicDB.subscription(for: subscriptionID) {
+            print("Já subscrito para notificações do Ranking.")
+            return
+        }
+        
+        // O Gatilho: Quando um registo "RankingAnnouncement" for CRIADO
+        let predicate = NSPredicate(value: true)
+        let subscription = CKQuerySubscription(
+            recordType: "RankingAnnouncement",
+            predicate: predicate,
+            subscriptionID: subscriptionID,
+            options: [.firesOnRecordCreation]
+        )
+        
+        // O Visual da Notificação Push
+        let notificationInfo = CKSubscription.NotificationInfo()
+        notificationInfo.alertLocalizationKey = "%1$@" // Lê a string da nuvem
+        notificationInfo.alertLocalizationArgs = ["messageText"] // O nome do campo que vamos criar em Python
+        notificationInfo.shouldBadge = true
+        notificationInfo.soundName = "default"
+        
+        subscription.notificationInfo = notificationInfo
+        
+        try await publicDB.save(subscription)
+        print("☁️ Subscrição de Pushes ativada com sucesso!")
+    }
 }
 
 

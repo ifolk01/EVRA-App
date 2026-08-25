@@ -1,0 +1,37 @@
+#
+//  ranking.yml
+//  Velos
+//
+//  Created by Filipe Pinto Cunha on 24/08/26.
+//
+
+name: Disparo Semanal do Ranking
+
+on:
+  schedule:
+    # Corre todas as Segundas-feiras às 13:00 UTC (10:00 da manhã no Rio de Janeiro)
+    - cron: '0 13 * * 3'
+  
+  workflow_dispatch:
+    # Este gatilho permite-lhe rodar o script manualmente clicando num botão no GitHub para testar!
+
+jobs:
+  run-ranking-push:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fazer Checkout do Código
+        uses: actions/checkout@v3
+        
+      - name: Configurar o Ambiente Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+          
+      - name: Instalar Dependências (requests e ecdsa para criptografia)
+        run: pip install requests ecdsa
+          
+      - name: Executar o Script de Notificação
+        env:
+          CLOUDKIT_KEY_ID: ${{ secrets.CLOUDKIT_KEY_ID }}
+          CLOUDKIT_PRIVATE_KEY: ${{ secrets.CLOUDKIT_PRIVATE_KEY }}
+        run: python scripts/ranking_push.py
