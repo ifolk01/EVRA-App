@@ -5,6 +5,7 @@
 
 import SwiftUI
 import SwiftData
+import CoreLocation
 
 struct ActivitiesView: View {
     @Query(sort: \LocalRide.date, order: .reverse) private var allRides: [LocalRide]
@@ -84,77 +85,93 @@ struct ActivityCardView: View {
         let secondaryText = isDark ? Color.white.opacity(0.6) : .gray
         let accentColor = isDark ? neonGreen : AppColors.levBlue
         
-        VStack(alignment: .leading, spacing: 16) {
+        HStack(spacing: 12) {
             
-            // 1. Cabeçalho (Data e Título Dinâmico)
-            VStack(alignment: .leading, spacing: 4) {
-                Text(relativeDateText(for: ride.date))
-                    .font(.subheadline)
-                    .fontWeight(.semibold)
-                    .foregroundColor(secondaryText)
+            // LADO ESQUERDO: Dados e Métricas organizados VERTICALMENTE
+            VStack(alignment: .leading, spacing: 18) { // Aumentamos o espaçamento para usar bem a altura
                 
-                Text(dynamicTitle(for: ride.date))
-                    .font(.title3)
-                    .fontWeight(.bold)
-                    .foregroundColor(accentColor)
-                    .lineLimit(1) // Proteção extra no título
-                    .minimumScaleFactor(0.8)
-            }
-            
-            // 2. Métricas
-            HStack(alignment: .bottom, spacing: 10) { // Espaçamento geral reduzido
+                // 1. Cabeçalho
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(relativeDateText(for: ride.date))
+                        .font(.subheadline)
+                        .fontWeight(.semibold)
+                        .foregroundColor(secondaryText)
+                    
+                    Text(dynamicTitle(for: ride.date))
+                        .font(.headline)
+                        .fontWeight(.bold)
+                        .foregroundColor(accentColor)
+                        .lineLimit(2)
+                        .minimumScaleFactor(0.8)
+                }
                 
-                // Bloco do CO2 (Destaque principal)
+                // 2. O Gigante CO2 (Agora reina sozinho na sua própria linha)
                 HStack(alignment: .firstTextBaseline, spacing: 2) {
                     Text(String(format: "%.0f", ride.co2Avoided))
-                        .font(.system(size: 48, weight: .black, design: .rounded))
+                        .font(.system(size: 46, weight: .black, design: .rounded)) // Aumentado um pouco já que tem espaço
                         .foregroundColor(primaryText)
-                        .minimumScaleFactor(0.4) // Encolhe até 40% se o número for gigante
                         .lineLimit(1)
+                        .minimumScaleFactor(0.4)
                     
                     VStack(alignment: .leading, spacing: -2) {
                         Text("g")
                         Text("CO2")
                     }
-                    .font(.caption)
-                    .fontWeight(.bold)
+                    .font(.system(size: 12, weight: .bold))
                     .foregroundColor(secondaryText)
                 }
                 
-                Spacer(minLength: 4) // Dá prioridade aos números
-                
-                // Outras 3 métricas em colunas (Agora flexíveis!)
-                HStack(spacing: 8) {
+                // 3. As métricas secundárias (Ganham a largura inteira da coluna esquerda)
+                HStack(spacing: 16) {
                     metricColumn(value: String(format: "%.2f", ride.distance), unit: "km", primary: primaryText, secondary: secondaryText)
+                    
                     metricColumn(value: formattedDuration(ride.duration), unit: "Duração", primary: primaryText, secondary: secondaryText)
+                    
                     metricColumn(value: String(format: "%.1f", averageSpeed), unit: "km/h med", primary: primaryText, secondary: secondaryText)
                 }
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            
+            // LADO DIREITO: O Traço da Rota (Centrado automaticamente na nova altura do cartão)
+            let realCoordinates = ride.route.map { CLLocationCoordinate2D(latitude: $0.latitude, longitude: $0.longitude) }
+            
+            if realCoordinates.isEmpty {
+                Image(systemName: "point.bottomleft.forward.to.point.topright.scurvepath")
+                    .font(.system(size: 36))
+                    .foregroundColor(secondaryText.opacity(0.2))
+                    .frame(width: 90, height: 90)
+                    .padding(.trailing, 4)
+            } else {
+                RouteTraceView(coordinates: realCoordinates, lineColor: .orange)
+                    .frame(width: 90, height: 90)
+                    .padding(.trailing, 4)
+            }
         }
-        .padding(20)
+        .padding(20) // Aumentamos o respiro interno do cartão
         .background(cardBg)
         .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
         .shadow(color: Color.black.opacity(isDark ? 0.3 : 0.04), radius: 12, x: 0, y: isDark ? 8 : 6)
     }
     
-    // 🔥 Subcomponente BLINDADO contra quebra de linha
+    // 🔥 Subcomponente BLINDADO
     @ViewBuilder
     private func metricColumn(value: String, unit: String, primary: Color, secondary: Color) -> some View {
-        VStack(alignment: .center, spacing: 2) {
+        VStack(alignment: .leading, spacing: 2) { // Alinhamento à esquerda fica mais elegante nesta nova disposição
             Text(value)
-                .font(.system(size: 18, weight: .heavy, design: .rounded))
+                .font(.system(size: 16, weight: .heavy, design: .rounded))
                 .foregroundColor(primary)
-                .lineLimit(1) // PROÍBE QUEBRA DE LINHA
-                .minimumScaleFactor(0.5) // Permite encolher
+                .lineLimit(1)
+                .minimumScaleFactor(0.5)
+            
             Text(unit)
-                .font(.caption2)
-                .fontWeight(.semibold)
+                .font(.system(size: 11, weight: .semibold))
                 .foregroundColor(secondary)
                 .lineLimit(1)
                 .minimumScaleFactor(0.7)
         }
-        .frame(minWidth: 40) // Dá um tamanho base para ele não esmagar os outros
     }
+        // Dá um tamanho base para ele não esmagar os outros
+    
     
     // MARK: - Funções de Lógica e Formatação (Mantidas intocáveis)
     private var averageSpeed: Double {

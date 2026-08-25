@@ -122,6 +122,8 @@ class TrackingService: NSObject, CLLocationManagerDelegate {
     private let locationManager = CLLocationManager()
     private let motionManager = CMMotionActivityManager()
    
+    var routeCoordinates: [RouteCoordinate] = []
+    
     // Estados reativos (Lidos pelas ViewModels/Live Activities)
     var isTrackingActive: Bool = false
     var currentSpeed: Double = 0.0
@@ -161,6 +163,7 @@ class TrackingService: NSObject, CLLocationManagerDelegate {
         currentDistance = 0.0
         isTrackingActive = true
         locationManager.startUpdatingLocation()
+        routeCoordinates.removeAll()
         
         // Inicia a captura do coprocessador de movimento (Acelerômetro)
         if CMMotionActivityManager.isActivityAvailable() {
@@ -236,7 +239,11 @@ class TrackingService: NSObject, CLLocationManagerDelegate {
                 // Só guarda e atualiza se passar na velocidade máxima
                 onDistanceUpdate?(self.currentDistance)
             }
-            
+        for location in locations {
+                    let newPoint = RouteCoordinate(latitude: location.coordinate.latitude, longitude: location.coordinate.longitude)
+                    routeCoordinates.append(newPoint)
+                }
+        
             lastLocation = location
         }
     

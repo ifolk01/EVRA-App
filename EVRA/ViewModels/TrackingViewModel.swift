@@ -227,7 +227,10 @@ class TrackingViewModel {
                     distance: distanceInKm,
                     duration: durationInSeconds,
                     co2Avoided: co2AvoidedGrams,
+                    date: Date(),
+                    route: trackingService.routeCoordinates,
                     userAppleID: currentUser?.appleUserIdentifier ?? "usuario_desconhecido"
+                   
                 )
                 context.insert(newRide)
                 
