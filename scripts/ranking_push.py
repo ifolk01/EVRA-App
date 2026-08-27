@@ -52,7 +52,7 @@ def get_top_3_users():
     
     payload = {
         "query": {
-            "recordType": "LevUser",
+            "recordType": "PublicLeaderboard",
             "sortBy": [{"fieldName": "totalCarbonPoints", "ascending": False}]
         },
         "resultsLimit": 3
