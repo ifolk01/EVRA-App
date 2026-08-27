@@ -65,7 +65,7 @@ def get_top_3_users():
         top_users = []
         for r in records:
             # 1. Pega o nome completo que vem da Apple
-            full_name = r.get("fields", {}).get("name", {}).get("value", "Ciclista")
+            full_name = r.get("fields", {}).get("userName", {}).get("value", "Ciclista")
             
             # 2. Fatiamos pelos espaços e guardamos só a primeira palavra
             first_name = full_name.split()[0] if full_name else "Ciclista"
